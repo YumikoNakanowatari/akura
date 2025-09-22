@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>写真／動画ギャラリー - CSV自動読み込み</title>
+  <style>
+    :root{
+      --maxw: 1200px;
+      --gap: 8px;
+      --radius: 8px;
+      --pad: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,.08);
+      --fg: #222;
+      --muted: #666;
+      --bg: #fafafa;
+      --card: #fff;
+      --accent: #2563eb;
+      --minw: 220px;
+      --tap: 44px;
+    }
+    *{ box-sizing: border-box; }
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Meiryo, sans-serif; background: var(--bg); color: var(--fg); }
+
+    header{ max-width: var(--maxw); margin: 12px auto 6px; padding: 0 10px; }
+    h1{ margin:0; font-size: clamp(18px, 2.2vw, 22px); }
+    .lead{ margin:0; color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
+
+    .cats{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:flex; gap:8px; row-gap:10px; flex-wrap:wrap; }
+    .cat{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:8px 12px; border-radius:999px; font-size: 13px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
+    .cat.active{ background: var(--accent); color:#fff; border-color: var(--accent); }
+
+    .toolbar{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
+    .toolbar .count{ color: var(--muted); font-size: 13px; }
+    .toolbar .page-size{ display:flex; align-items:center; gap:8px; font-size: 13px; }
+    .toolbar select{ padding:6px 8px; min-height: var(--tap); }
+
+    .grid{ max-width: var(--maxw); margin: 0 auto; padding: 0 8px 14px; display:grid; grid-template-columns: repeat(auto-fill, minmax(var(--minw), 1fr)); gap: var(--gap); }
+
+    .card{ background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; cursor:pointer; }
+    .media-wrapper{ position:relative; overflow:hidden; background:#f2f2f2; }
+    .media-wrapper img, .media-wrapper video{ width:100%; height:auto; display:block; object-fit:cover; }
+
+    @media (hover: hover){
+      .media-wrapper img, .media-wrapper video{ transition: transform .35s ease; }
+      .media-wrapper:hover img, .media-wrapper:hover video{ transform: scale(1.05); }
+    }
+
+    .caption{ padding: var(--pad) calc(var(--pad) + 2px); font-size: 14px; }
+    .caption-title{ font-weight:600; margin-bottom: 2px; font-size: 14px; }
+    .caption-desc{ font-size: 13px; color: var(--muted); }
+
+    .pager{ max-width: var(--maxw); margin: 4px auto 12px; padding: 0 10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; }
+    .pager a, .pager span{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:10px 12px; border-radius: 8px; font-size: 14px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
+    .pager .active{ background: var(--accent); color:#fff; border-color: var(--accent); }
+    .pager .disabled{ opacity:.45; pointer-events:none; }
+
+    .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; justify-content:center; align-items:center; z-index:100; padding:20px; }
+    .lightbox.open{ display:flex; }
+    .lightbox img, .lightbox video{ max-width:100%; max-height:100%; border-radius: 8px; }
+    .lightbox button{ position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; font-size:24px; padding:8px 12px; cursor:pointer; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>写真／動画ギャラリー</h1>
+      <p class="lead">data.csv を自動読み込みして表示します。</p>
+    </div>
+  </header>
+
+  <nav class="cats" id="js-cats" aria-label="カテゴリ"></nav>
+
+  <div class="toolbar">
+    <div class="count" id="js-count">読み込み中…</div>
+    <label class="page-size">1ページ表示数：
+      <select id="js-page-size">
+        <option>12</option>
+        <option selected>24</option>
+        <option>36</option>
+        <option>48</option>
+      </select>
+    </label>
+  </div>
+
+  <main class="grid" id="js-grid"></main>
+  <nav class="pager" id="js-pager" aria-label="ページナビゲーション"></nav>
+
+  <div class="lightbox" id="lightbox">
+    <button id="lbClose">✕</button>
+    <div id="lbContent"></div>
+  </div>
+
+  <script>
+    let categories = ['all'];
+    let mediaData = [];
+
+    const grid = document.getElementById('js-grid');
+    const pager = document.getElementById('js-pager');
+    const count = document.getElementById('js-count');
+    const pageSizeSelect = document.getElementById('js-page-size');
+    const catsNav = document.getElementById('js-cats');
+
+    function getParams(){
+      const sp = new URLSearchParams(location.search);
+      return {
+        page: Math.max(1, parseInt(sp.get('page') || '1', 10)),
+        size: Math.max(1, parseInt(sp.get('size') || '24', 10)),
+        cat: (sp.get('cat') || 'all').toLowerCase(),
+      };
+    }
+    let {page: currentPage, size: pageSize, cat: currentCat} = getParams();
+
+    function syncPageSizeSelect(){
+      [...pageSizeSelect.options].forEach(o => o.selected = (parseInt(o.value,10) === pageSize));
+    }
+    syncPageSizeSelect();
+
+    function applyMinWidthBySize(size){
+      let px;
+      if(size <= 12) px = 320;
+      else if(size <= 24) px = 260;
+      else if(size <= 36) px = 220;
+      else px = 200;
+      document.documentElement.style.setProperty('--minw', px + 'px');
+    }
+
+    function labelCat(cat){ return cat==='all'?'すべて':cat; }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+    function renderCats(activeCat){
+      catsNav.innerHTML = '';
+      const unique = ['all', ...new Set(mediaData.map(d => (d.category||'').toLowerCase()))];
+      unique.forEach(cat => {
+        const a = document.createElement('a');
+        a.href = `?cat=${encodeURIComponent(cat)}&page=1&size=${pageSize}`;
+        a.textContent = labelCat(cat);
+        a.className = 'cat' + (cat === activeCat ? ' active' : '');
+        a.addEventListener('click', e=>{ e.preventDefault(); navigate(1, pageSize, cat); });
+        catsNav.appendChild(a);
+      });
+    }
+
+    function renderGrid(data){
+      grid.innerHTML = '';
+      data.forEach(item => {
+        const card=document.createElement('div');card.className='card';
+        const wrap=document.createElement('div');wrap.className='media-wrapper';
+        if(item.type==='video'){
+          const v=document.createElement('video');v.src=item.src;v.controls=true;v.muted=true;v.preload='metadata';v.playsInline=true;if(item.poster)v.poster=item.poster;wrap.appendChild(v);
+        }else{
+          const img=document.createElement('img');img.loading='lazy';img.src=item.src;wrap.appendChild(img);
+        }
+        const cap=document.createElement('div');cap.className='caption';cap.innerHTML=`<div class="caption-title">${escapeHtml(item.title)}</div><div class="caption-desc">${escapeHtml(item.desc)}</div>`;
+        card.appendChild(wrap);card.appendChild(cap);
+        card.addEventListener('click', ()=>openLightbox(item));
+        grid.appendChild(card);
+      });
+    }
+
+    function renderPager(current,totalPages){
+      pager.innerHTML='';
+      const make=(p,label,disabled=false,active=false)=>{
+        const el=document.createElement(disabled?'span':'a');
+        el.textContent=label;
+        el.className=[disabled&&'disabled',active&&'active'].filter(Boolean).join(' ');
+        if(!disabled){
+          el.href=`?cat=${encodeURIComponent(currentCat)}&page=${p}&size=${pageSize}`;
+          el.addEventListener('click',e=>{e.preventDefault();navigate(p,pageSize,currentCat);});
+        }
+        pager.appendChild(el);
+      };
+      make(1,'« 最初',current===1);
+      make(Math.max(1,current-1),'‹ 前へ',current===1);
+      const span=3,from=Math.max(1,current-span),to=Math.min(totalPages,current+span);
+      for(let p=from;p<=to;p++) make(p,String(p),false,p===current);
+      make(Math.min(totalPages,current+1),'次へ ›',current===totalPages);
+      make(totalPages,'最後 »',current===totalPages);
+    }
+
+    function render(){
+      applyMinWidthBySize(pageSize);
+      renderCats(currentCat);
+      const filtered=currentCat==='all'?mediaData:mediaData.filter(d=>(d.category||'').toLowerCase()===currentCat);
+      const total=filtered.length;
+      const totalPages=Math.max(1,Math.ceil(total/pageSize));
+      currentPage=Math.min(currentPage,totalPages);
+      const start=(currentPage-1)*pageSize;
+      const end=Math.min(start+pageSize,total);
+      count.textContent=`${labelCat(currentCat)}：${total}件中 ${total?(start+1):0}〜${end} を表示（ページ ${currentPage}/${totalPages}）`;
+      renderGrid(filtered.slice(start,end));
+      renderPager(currentPage,totalPages);
+    }
+
+    function navigate(p,size,cat){
+      currentPage=p;pageSize=size;currentCat=cat;
+      const qs=new URLSearchParams();
+      if(currentCat && currentCat!=='all') qs.set('cat',currentCat);
+      qs.set('page',String(currentPage));
+      qs.set('size',String(pageSize));
+      history.pushState({},'',`${location.pathname}?${qs.toString()}`);
+      syncPageSizeSelect();
+      render();
+    }
+
+    pageSizeSelect.addEventListener('change',()=>{navigate(1,parseInt(pageSizeSelect.value,10)||24,currentCat);});
+    window.addEventListener('popstate',()=>{({page:currentPage,size:pageSize,cat:currentCat}=getParams());syncPageSizeSelect();render();});
+
+    const lb=document.getElementById('lightbox');const lbContent=document.getElementById('lbContent');
+    document.getElementById('lbClose').addEventListener('click',()=>lb.classList.remove('open'));
+    lb.addEventListener('click',e=>{if(e.target===lb)lb.classList.remove('open');});
+    function openLightbox(item){
+      lbContent.innerHTML='';
+      if(item.type==='video'){
+        const v=document.createElement('video');v.src=item.src;v.controls=true;v.autoplay=true;v.playsInline=true;if(item.poster)v.poster=item.poster;lbContent.appendChild(v);
+      }else{
+        const img=document.createElement('img');img.src=item.src;lbContent.appendChild(img);
+      }
+      lb.classList.add('open');
+    }
+
+    // ===== CSV 読み込み =====
+    const csvUrl = new URL('./data.csv', location.href).toString();
+
+    fetch(csvUrl, { cache: 'no-store' })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+        return r.text();
+      })
+      .then(text => applyCsv(text))
+      .catch(err => {
+        console.error('CSV fetch error:', err);
+        document.getElementById('js-count').textContent =
+          `CSVの取得に失敗しました：${err.message}（URL: ${csvUrl}）`;
+      });
+
+    function applyCsv(text){
+      const rows=parseCSV(text);
+      if(rows.length===0){count.textContent='CSVが空です';return;}
+      const header=rows[0].map(h=>h.trim().toLowerCase());
+      const idx={
+        filename: header.indexOf('filename'),
+        type: header.indexOf('type'),
+        title: header.indexOf('title'),
+        desc: header.indexOf('description')>=0?header.indexOf('description'):header.indexOf('desc'),
+        category: header.indexOf('category'),
+        poster: header.indexOf('poster')
+      };
+      if(idx.filename===-1||idx.type===-1){count.textContent='CSVに filename,type 列が必要です';return;}
+      mediaData=rows.slice(1).filter(r=>r.length&&r.some(c=>String(c).trim()!=='')).map(r=>{
+        const filename=(r[idx.filename]||'').trim();
+        const type=String(r[idx.type]||'image').toLowerCase();
+        const title=(idx.title>=0?r[idx.title]:'')||'';
+        const desc=(idx.desc>=0?r[idx.desc]:'')||'';
+        const cat=((idx.category>=0?r[idx.category]:'')||'uncategorized').toLowerCase();
+        const poster=(idx.poster>=0?r[idx.poster]:'')||'';
+        return{category:cat,type,src:filename,title,desc,poster:poster||undefined};
+      });
+      categories=['all',...new Set(mediaData.map(d=>d.category))];
+      if(currentCat!=='all'&&!categories.includes(currentCat)) currentCat='all';
+      currentPage=1;
+      render();
+    }
+
+    function parseCSV(text){
+      const rows=[];let row=[],field='',i=0,inQuotes=false;
+      while(i<text.length){const c=text[i];if(inQuotes){if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else{inQuotes=false;}}else{field+=c;}}else{if(c==='"'){inQuotes=true;}else if(c===','){row.push(field);field='';}else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}else if(c==='\r'){}else{field+=c;}}i++;}
+      if(field.length>0||row.length>0){row.push(field);rows.push(row);}return rows;
+    }
+  </script>
+</body>
+</html>
