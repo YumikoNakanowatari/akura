@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>写真／動画ギャラリー - CSV自動読み込み</title>
+  <title>安倉バレーボールクラブ</title>
   <style>
     :root{
       --maxw: 1200px;
@@ -64,8 +64,8 @@
 <body>
   <header>
     <div>
-      <h1>写真／動画ギャラリー</h1>
-      <p class="lead">data.csv を自動読み込みして表示します。</p>
+      <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
+      <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
     </div>
   </header>
 
@@ -220,7 +220,7 @@
     }
 
     // ===== CSV 読み込み =====
-    const csvUrl = new URL('./data.csv', location.href).toString();
+    const csvUrl = new URL('https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/data.csv', location.href).toString();
 
     fetch(csvUrl, { cache: 'no-store' })
       .then(async (r) => {
