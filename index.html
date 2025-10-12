@@ -277,7 +277,7 @@
     }
 
     // ===== CSV 読み込み =====
-    const csvUrl = new URL('data.csv', location.href).toString();
+    const csvUrl = new URL(BASE_URL + 'data.csv', location.href).toString();
 
     fetch(csvUrl, { cache: 'no-store' })
       .then(async (r) => {
