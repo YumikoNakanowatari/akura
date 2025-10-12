@@ -94,7 +94,7 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/'; // 自動付与するベースURL
+    const BASE_URL = ''; // 自動付与するベースURL
     
     let categories = ['all'];
     let mediaData = [];
@@ -152,32 +152,51 @@
     }
 
     function renderSubcats(activeCat, activeSubcat){
-        const show = activeCat !== 'all';
-        subcatsNav.classList.toggle('hidden', !show);
-        subcatsNav.innerHTML = '';
-        if(!show) return;
+      // cat=all の時は隠す（必要なら true に変えて常時表示に）
+      const SHOW_SUBS_ON_ALL = false;
+      const show = SHOW_SUBS_ON_ALL ? true : (activeCat !== 'all');
 
-        // サブカテゴリ一覧を生成（配列→filter→Set→配列）
-        const subsArr = mediaData
-            .filter(d => (d.category||'').toLowerCase() === activeCat)
-            .map(d => (d.subcategory||'').toLowerCase().trim())
-            .filter(Boolean); // 空文字除外
-        const subsUnique = Array.from(new Set(subsArr));
-        const subs = ['all', ...subsUnique];
+      subcatsNav.classList.toggle('hidden', !show);
+      subcatsNav.innerHTML = '';
+      if(!show) return;
 
-        if(subs.length <= 1){ subcatsNav.classList.add('hidden'); return; }
+      // 対象データ集合（カテゴリで絞る or 全体）
+      const source = SHOW_SUBS_ON_ALL
+        ? mediaData
+        : mediaData.filter(d => (d.category||'').toLowerCase() === activeCat);
 
-        subs.forEach(sc => {
-            const a = document.createElement('a');
-            a.href = `?cat=${encodeURIComponent(activeCat)}&subcat=${encodeURIComponent(sc)}&page=1&size=${pageSize}`;
-            a.textContent = sc==='all' ? 'すべて' : sc;
-            a.className = 'subcat' + (sc === activeSubcat ? ' active' : '');
-            a.addEventListener('click', e=>{
-            e.preventDefault();
-            navigate(1, pageSize, activeCat, sc);
-            });
-            subcatsNav.appendChild(a);
+      // 表示名の重複を大文字小文字無視でまとめる（先に出た表記を採用）
+      const displayByKey = new Map(); // key: lower, val: 最初に見つかった表示名
+      for(const d of source){
+        const texts = d.subcategoriesText || [];
+        for(const t of texts){
+          const key = t.toLowerCase();
+          if(!displayByKey.has(key)) displayByKey.set(key, t);
+        }
+      }
+
+      // 空ならUIを隠す
+      if(displayByKey.size === 0){
+        subcatsNav.classList.add('hidden');
+        return;
+      }
+
+      // 'all' + 重複除去済みの表示名でボタン生成
+      const entries = Array.from(displayByKey.entries()); // [[key, label], ...]
+      const buttons = [['all','すべて'], ...entries];
+
+      for(const [key,label] of buttons){
+        const isAll = key === 'all';
+        const a = document.createElement('a');
+        a.href = `?cat=${encodeURIComponent(activeCat)}&subcat=${encodeURIComponent(key)}&page=1&size=${pageSize}`;
+        a.textContent = isAll ? 'すべて' : label;
+        a.className = 'subcat' + ((isAll ? 'all' : key) === activeSubcat ? ' active' : '');
+        a.addEventListener('click', e=>{
+          e.preventDefault();
+          navigate(1, pageSize, activeCat, isAll ? 'all' : key);
         });
+        subcatsNav.appendChild(a);
+      }
     }
 
     function renderGrid(data){
@@ -231,7 +250,7 @@
         filtered = filtered.filter(d => (d.category||'').toLowerCase() === currentCat);
       }
       if(currentCat !== 'all' && currentSubcat !== 'all'){
-        filtered = filtered.filter(d => (d.subcategory||'').toLowerCase() === currentSubcat);
+        filtered = filtered.filter(d => (d.subcategories || []).includes(currentSubcat));
       }
 
       const total=filtered.length;
@@ -291,47 +310,73 @@
           `CSVの取得に失敗しました：${err.message}（URL: ${csvUrl}）`;
       });
 
-    function applyCsv(text){
-      const rows=parseCSV(text);
-      if(rows.length===0){count.textContent='CSVが空です';return;}
-      const header=rows[0].map(h=>h.trim());
-      const headerLower=header.map(h=>h.toLowerCase());
-      const idx={
-        filename: headerLower.indexOf('filename'),
-        type: headerLower.indexOf('type'),
-        title: headerLower.indexOf('title'),
-        desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
-        category: headerLower.indexOf('category'),
-        subcategory: headerLower.indexOf('subcategory'), // 追加
-        poster: headerLower.indexOf('poster')
-      };
-      if(idx.filename===-1||idx.type===-1){count.textContent='CSVに filename,type 列が必要です';return;}
-      mediaData=rows.slice(1)
-        .filter(r=>r.length&&r.some(c=>String(c).trim()!==''))
-        .map(r=>{
-          const filename=(r[idx.filename]||'').trim();
-          const type=String(r[idx.type]||'image').toLowerCase();
-          const title=(idx.title>=0?r[idx.title]:'')||'';
-          const desc=(idx.desc>=0?r[idx.desc]:'')||'';
-          const catText=(idx.category>=0?(r[idx.category]||'').trim():'')||'uncategorized';
-          const catLower=catText.toLowerCase();
-          const subcatText=(idx.subcategory>=0?(r[idx.subcategory]||'').trim():'');
-          const subcatLower=subcatText.toLowerCase();
-          const poster=(idx.poster>=0?r[idx.poster]:'')||'';
-          return{
-            category: catLower,
-            categoryText: catText,
-            subcategory: subcatLower,
-            subcategoryText: subcatText,
-            type,
-            src: BASE_URL +filename,
-            title,
-            desc,
-            poster: poster||undefined
-          };
-        });
-      categories=['all',...new Set(mediaData.map(d=>d.category))];
-      if(currentCat!=='all'&&!categories.includes(currentCat)) currentCat='all';
+  function applyCsv(text){
+    const rows=parseCSV(text);
+    if(rows.length===0){count.textContent='CSVが空です';return;}
+    const header=rows[0].map(h=>h.trim());
+    const headerLower=header.map(h=>h.toLowerCase());
+
+    const idx={
+      filename: headerLower.indexOf('filename'),
+      type: headerLower.indexOf('type'),
+      title: headerLower.indexOf('title'),
+      desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
+      category: headerLower.indexOf('category'),
+      // ここを追加
+      sub1: headerLower.indexOf('subcategory1'),
+      sub2: headerLower.indexOf('subcategory2'),
+      sub3: headerLower.indexOf('subcategory3'),
+      poster: headerLower.indexOf('poster')
+    };
+    if(idx.filename===-1||idx.type===-1){
+      count.textContent='CSVに filename,type 列が必要です';
+      return;
+    }
+
+    mediaData = rows.slice(1)
+      .filter(r => r.length && r.some(c => String(c).trim()!==''))
+      .map(r => {
+        const filename=(r[idx.filename]||'').trim();
+        const type=String(r[idx.type]||'image').toLowerCase();
+        const title=(idx.title>=0?r[idx.title]:'')||'';
+        const desc=(idx.desc>=0?r[idx.desc]:'')||'';
+        const catText=(idx.category>=0?(r[idx.category]||'').trim():'')||'uncategorized';
+        const catLower=catText.toLowerCase();
+        const poster=(idx.poster>=0?r[idx.poster]:'')||'';
+
+        // subcategory1..3 を収集（空は除外）
+        const subsRaw = [idx.sub1, idx.sub2, idx.sub3]
+          .map(i => i>=0 ? (r[i]||'').toString().trim() : '')
+          .filter(Boolean);
+
+        // 大文字小文字を無視して重複除去（表示用の元文字列は保持）
+        const seen = new Set();
+        const subcategoriesText = [];
+        const subcategories = [];
+        for(const s of subsRaw){
+          const key = s.toLowerCase();
+          if(!seen.has(key)){
+            seen.add(key);
+            subcategories.push(key);          // 検索用（小文字）
+            subcategoriesText.push(s);        // 表示用（元のまま）
+          }
+        }
+
+        return {
+          category: catLower,
+          categoryText: catText,
+          subcategories,             // 小文字配列
+          subcategoriesText,         // 表示用配列
+          type,
+          src: filename,
+          title,
+          desc,
+          poster: poster || undefined
+        };
+      });
+
+      categories=['all', ...new Set(mediaData.map(d=>d.category))];
+      if(currentCat!=='all' && !categories.includes(currentCat)) currentCat='all';
       if(currentCat==='all') currentSubcat='all';
       currentPage=1;
       render();
