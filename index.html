@@ -107,6 +107,18 @@
     const catsNav = document.getElementById('js-cats');
     const subcatsNav = document.getElementById('js-subcats');
 
+    function toSafeUrl(p){
+      if(!p) return '';
+      // 余分な空白・バックスラッシュ→スラッシュ・先頭 ./ を除去
+      let s = String(p).trim().replace(/\\/g, '/').replace(/^\.?\//, '');
+      // クエリやハッシュは保持してパス部分だけエンコード
+      const m = s.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+      const path = (m?.[1] ?? '').split('/').map(seg => encodeURIComponent(seg)).join('/');
+      const query = m?.[2] ?? '';
+      const hash  = m?.[3] ?? '';
+      const joined = path + query + hash;
+      return BASE_URL ? new URL(joined, BASE_URL).toString() : joined;
+    }
     function getParams(){
       const sp = new URLSearchParams(location.search);
       return {
@@ -203,19 +215,35 @@
     function renderGrid(data){
       grid.innerHTML = '';
       data.forEach(item => {
-        const card=document.createElement('div');card.className='card';
-        const wrap=document.createElement('div');wrap.className='media-wrapper';
-        if(item.type==='video'){
-          const v=document.createElement('video');v.src=item.src;v.controls=true;v.muted=true;v.preload='metadata';v.playsInline=true;if(item.poster)v.poster=item.poster;wrap.appendChild(v);
-        }else{
-          const img=document.createElement('img');img.loading='lazy';img.src=item.src;wrap.appendChild(img);
-        }
-        const metaLine = [item.categoryText, item.subcategoryText].filter(Boolean).join(' / ');
-        const cap=document.createElement('div');cap.className='caption';
-        cap.innerHTML=`<div class="caption-title">${escapeHtml(item.title)}</div>
-                       <div class="caption-desc">${escapeHtml(metaLine ? metaLine + (item.desc? ' — ' : '') : '')}${escapeHtml(item.desc)}</div>`;
-        card.appendChild(wrap);card.appendChild(cap);
-        card.addEventListener('click', ()=>openLightbox(item));
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'media-wrapper';
+
+        // サムネイル画像表示（動画はthumbなし想定）
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = item.thumb || item.src;
+        wrap.appendChild(img);
+
+        const metaLineParts = [
+          item.categoryText,
+          (item.subcategoriesText && item.subcategoriesText.length)
+            ? item.subcategoriesText.join(' / ')
+            : null
+        ].filter(Boolean);
+
+        const cap = document.createElement('div');
+        cap.className = 'caption';
+        cap.innerHTML = `
+          <div class="caption-title">${escapeHtml(item.title)}</div>
+          <div class="caption-desc">${escapeHtml(metaLineParts.join(' / '))}
+          ${item.desc ? ' — ' + escapeHtml(item.desc) : ''}</div>`;
+
+        card.appendChild(wrap);
+        card.appendChild(cap);
+        card.addEventListener('click', () => openLightbox(item)); // クリックで拡大
         grid.appendChild(card);
       });
     }
@@ -287,11 +315,20 @@
     document.getElementById('lbClose').addEventListener('click',()=>lb.classList.remove('open'));
     lb.addEventListener('click',e=>{if(e.target===lb)lb.classList.remove('open');});
     function openLightbox(item){
-      lbContent.innerHTML='';
-      if(item.type==='video'){
-        const v=document.createElement('video');v.src=item.src;v.controls=true;v.autoplay=true;v.playsInline=true;if(item.poster)v.poster=item.poster;lbContent.appendChild(v);
-      }else{
-        const img=document.createElement('img');img.src=item.src;lbContent.appendChild(img);
+      lbContent.innerHTML = '';
+      if(item.type === 'video'){
+        const v = document.createElement('video');
+        v.src = item.src;  // 動画は通常srcでOK
+        v.controls = true;
+        v.autoplay = true;
+        v.playsInline = true;
+        v.muted = true;
+        if(item.poster) v.poster = item.poster;
+        lbContent.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = item.large || item.src;  // ← large画像を使用
+        lbContent.appendChild(img);
       }
       lb.classList.add('open');
     }
@@ -366,10 +403,12 @@
         return {
           category: catLower,
           categoryText: catText,
-          subcategories,             // 小文字配列
-          subcategoriesText,         // 表示用配列
+          subcategories,
+          subcategoriesText,
           type,
-          src: BASE_URL + filename,
+          src: toSafeUrl(filename),   // ← largeではなくベース名を保持
+          thumb: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-thumb.webp'),
+          large: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-large.webp'),
           title,
           desc,
           poster: poster || undefined
