@@ -96,7 +96,7 @@
 
   <script>
     const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/'; // 自動付与するベースURL
-    
+    //const BASE_URL = '';
     let categories = ['all'];
     let mediaData = [];
 
@@ -106,6 +106,28 @@
     const pageSizeSelect = document.getElementById('js-page-size');
     const catsNav = document.getElementById('js-cats');
     const subcatsNav = document.getElementById('js-subcats');
+
+    function getYouTubeId(u){
+      if(!u) return null;
+      try{
+        const url = new URL(u, location.href);
+        const host = url.hostname.replace(/^www\./,'');
+        if(host === 'youtu.be'){
+          return url.pathname.slice(1) || null; // /VIDEOID
+        }
+        if(host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com'){
+          if(url.pathname === '/watch') return url.searchParams.get('v');
+          const m = url.pathname.match(/^\/embed\/([^/?#]+)/);
+          if(m) return m[1];
+        }
+      }catch(e){ /* 相対等は無視 */ }
+      // 生文字列に v= がある場合のフォールバック
+      const m = String(u).match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+      return m ? m[1] : null;
+    }
+
+    function youTubeThumb(id){ return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`; }
+    function youTubeEmbed(id){ return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`; }
 
     function toSafeUrl(p){
       if(!p) return '';
@@ -221,17 +243,28 @@
         const wrap = document.createElement('div');
         wrap.className = 'media-wrapper';
 
-        // サムネイル画像表示（動画はthumbなし想定）
         const img = document.createElement('img');
         img.loading = 'lazy';
         img.src = item.thumb || item.src;
         wrap.appendChild(img);
 
+        // YouTubeには再生マーク
+        if(item.isYouTube){
+          const badge = document.createElement('div');
+          badge.style.position='absolute';
+          badge.style.inset='0';
+          badge.style.display='grid';
+          badge.style.placeItems='center';
+          badge.style.pointerEvents='none';
+          badge.innerHTML = `<div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.5);display:grid;place-items:center;">
+            <div style="margin-left:4px;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:20px solid #fff;"></div>
+          </div>`;
+          wrap.appendChild(badge);
+        }
+
         const metaLineParts = [
           item.categoryText,
-          (item.subcategoriesText && item.subcategoriesText.length)
-            ? item.subcategoriesText.join(' / ')
-            : null
+          (item.subcategoriesText && item.subcategoriesText.length) ? item.subcategoriesText.join(' / ') : null
         ].filter(Boolean);
 
         const cap = document.createElement('div');
@@ -243,10 +276,11 @@
 
         card.appendChild(wrap);
         card.appendChild(cap);
-        card.addEventListener('click', () => openLightbox(item)); // クリックで拡大
+        card.addEventListener('click', () => openLightbox(item));
         grid.appendChild(card);
       });
     }
+
 
     function renderPager(current,totalPages){
       pager.innerHTML='';
@@ -316,22 +350,34 @@
     lb.addEventListener('click',e=>{if(e.target===lb)lb.classList.remove('open');});
     function openLightbox(item){
       lbContent.innerHTML = '';
-      if(item.type === 'video'){
+      if(item.isYouTube){
+        const ifr = document.createElement('iframe');
+        ifr.src = item.large; // embed URL（autoplay=1 等）
+        ifr.width = '100%';
+        ifr.height = '100%';
+        ifr.style.maxWidth = 'min(96vw, 1280px)';
+        ifr.style.maxHeight = '80vh';
+        ifr.style.aspectRatio = '16 / 9';
+        ifr.setAttribute('frameborder','0');
+        ifr.setAttribute('allow','accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+        ifr.setAttribute('allowfullscreen','true');
+        lbContent.appendChild(ifr);
+      } else if(item.type === 'video'){
+        // 既存のローカル動画ファイル対応を残す場合（不要なら消してOK）
         const v = document.createElement('video');
-        v.src = item.src;  // 動画は通常srcでOK
-        v.controls = true;
-        v.autoplay = true;
-        v.playsInline = true;
-        v.muted = true;
+        v.src = item.src;
+        v.controls = true; v.autoplay = true; v.playsInline = true; v.muted = true;
         if(item.poster) v.poster = item.poster;
         lbContent.appendChild(v);
       } else {
+        // 画像は large を表示
         const img = document.createElement('img');
-        img.src = item.large || item.src;  // ← large画像を使用
+        img.src = item.large || item.src;
         lbContent.appendChild(img);
       }
       lb.classList.add('open');
     }
+
 
     // ===== CSV 読み込み =====
     const csvUrl = new URL(BASE_URL + 'data.csv', location.href).toString();
@@ -374,13 +420,21 @@
     mediaData = rows.slice(1)
       .filter(r => r.length && r.some(c => String(c).trim()!==''))
       .map(r => {
-        const filename=(r[idx.filename]||'').trim();
-        const type=String(r[idx.type]||'image').toLowerCase();
+        const filenameRaw = (r[idx.filename]||'').trim();
+        let type = String(r[idx.type]||'image').toLowerCase();
         const title=(idx.title>=0?r[idx.title]:'')||'';
         const desc=(idx.desc>=0?r[idx.desc]:'')||'';
         const catText=(idx.category>=0?(r[idx.category]||'').trim():'')||'uncategorized';
         const catLower=catText.toLowerCase();
-        const poster=(idx.poster>=0?r[idx.poster]:'')||'';
+        const posterRaw   = (idx.poster>=0 ? r[idx.poster] : '') || '';
+
+        // ★ YouTube自動判定（typeが空でもURLだけでOK）
+        const ytId = getYouTubeId(filenameRaw);
+        if(ytId) type = 'youtube';
+
+        const baseName = filenameRaw.replace(/\.[^.]+$/, ''); // 画像の拡張子を除去してベース名に
+        const srcSafe  = toSafeUrl(filenameRaw);
+        const poster   = posterRaw ? toSafeUrl(posterRaw) : undefined;
 
         // subcategory1..3 を収集（空は除外）
         const subsRaw = [idx.sub1, idx.sub2, idx.sub3]
@@ -406,9 +460,12 @@
           subcategories,
           subcategoriesText,
           type,
-          src: toSafeUrl(filename),   // ← largeではなくベース名を保持
-          thumb: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-thumb.webp'),
-          large: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-large.webp'),
+           // 画像系はthumb/largeを使う。動画は従来src、YouTubeは埋め込み用に分ける
+          src: srcSafe, // 画像や従来動画の元パス（YouTubeは元URL）
+          thumb: ytId ? youTubeThumb(ytId) : toSafeUrl(baseName + '-thumb.webp'),
+          large: ytId ? youTubeEmbed(ytId) : toSafeUrl(baseName + '-large.webp'),
+          isYouTube: !!ytId,
+          ytId: ytId || undefined,
           title,
           desc,
           poster: poster || undefined
