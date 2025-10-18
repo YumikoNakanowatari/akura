@@ -16,6 +16,7 @@
       --bg: #fafafa;
       --card: #fff;
       --accent: #2563eb;
+      --subaccent: #2d8be8;
       --minw: 220px;
       --tap: 44px;
     }
@@ -25,10 +26,35 @@
     header{ max-width: var(--maxw); margin: 12px auto 6px; padding: 0 10px; }
     h1{ margin:0; font-size: clamp(18px, 2.2vw, 22px); }
     .lead{ margin:0; color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
-
+    /* タイトル左右アイコン */
+    .title-with-icons{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;              /* タイトルとアイコンの間隔 */
+      line-height: 1.2;
+    }
+    /* 左右に同じ画像：文字サイズに連動（1em） */
+    .title-with-icons::before,
+    .title-with-icons::after{
+        content: "";
+        display: inline-block;
+        width: 1.8em;              /* 文字と同サイズ */
+        height: 1.8em;
+        background: no-repeat center / contain;
+        /* ベースライン微調整（必要なら調整）*/
+        transform: translateY(0.06em);
+    }
+    /* 画像URLを指定 */
+    .title-with-icons::before{
+      background-image: url("assets/left-icon.jpg");
+    }
+    .title-with-icons::after{
+      background-image: url("assets/right-icon.jpg"); /* 左右で別でも同じでもOK */
+    }
     .cats,.subcats{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:flex; gap:8px; row-gap:10px; flex-wrap:wrap; }
     .cat,.subcat{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:8px 12px; border-radius:999px; font-size: 13px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
-    .cat.active,.subcat.active{ background: var(--accent); color:#fff; border-color: var(--accent); }
+    .cat.active{ background: var(--accent); color:#fff; border-color: var(--accent); }
+    .subcat.active{ background: var(--subaccent); color:#fff; border-color: var(--subaccent); }
 
     .toolbar{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
     .toolbar .count{ color: var(--muted); font-size: 13px; }
@@ -65,7 +91,7 @@
 <body>
   <header>
     <div>
-      <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
+      <h1 class="title-with-icons">安倉バレーボールクラブでの挑戦と成長の日々</h1>
       <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
     </div>
   </header>
