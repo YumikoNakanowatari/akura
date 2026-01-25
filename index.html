@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>安倉バレーボールクラブ</title>
+
   <style>
     :root{
       --maxw: 1200px;
@@ -16,432 +17,317 @@
       --bg: #fafafa;
       --card: #fff;
       --accent: #2563eb;
+      --subaccent: #2d8be8;
       --minw: 220px;
       --tap: 44px;
     }
     *{ box-sizing: border-box; }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Meiryo, sans-serif; background: var(--bg); color: var(--fg); }
-
-    header{ max-width: var(--maxw); margin: 12px auto 6px; padding: 0 10px; }
-    h1{ margin:0; font-size: clamp(18px, 2.2vw, 22px); }
-    .lead{ margin:0; color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
-
-    .cats,.subcats{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:flex; gap:8px; row-gap:10px; flex-wrap:wrap; }
-    .cat,.subcat{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:8px 12px; border-radius:999px; font-size: 13px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
-    .cat.active,.subcat.active{ background: var(--accent); color:#fff; border-color: var(--accent); }
-
-    .toolbar{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
-    .toolbar .count{ color: var(--muted); font-size: 13px; }
-    .toolbar .page-size{ display:flex; align-items:center; gap:8px; font-size: 13px; }
-    .toolbar select{ padding:6px 8px; min-height: var(--tap); }
-
-    .grid{ max-width: var(--maxw); margin: 0 auto; padding: 0 8px 14px; display:grid; grid-template-columns: repeat(auto-fill, minmax(var(--minw), 1fr)); gap: var(--gap); }
-
-    .card{ background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; cursor:pointer; }
-    .media-wrapper{ position:relative; overflow:hidden; background:#f2f2f2; }
-    .media-wrapper img, .media-wrapper video{ width:100%; height:auto; display:block; object-fit:cover; }
-
-    @media (hover: hover){
-      .media-wrapper img, .media-wrapper video{ transition: transform .35s ease; }
-      .media-wrapper:hover img, .media-wrapper:hover video{ transform: scale(1.05); }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Meiryo, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
     }
 
-    .caption{ padding: var(--pad) calc(var(--pad) + 2px); font-size: 14px; }
-    .caption-title{ font-weight:600; margin-bottom: 2px; font-size: 14px; }
-    .caption-desc{ font-size: 13px; color: var(--muted); }
+    header{
+      max-width: var(--maxw);
+      margin: 12px auto 6px;
+      padding: 0 10px;
+    }
 
-    .pager{ max-width: var(--maxw); margin: 4px auto 12px; padding: 0 10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; }
-    .pager a, .pager span{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:10px 12px; border-radius: 8px; font-size: 14px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
-    .pager .active{ background: var(--accent); color:#fff; border-color: var(--accent); }
-    .pager .disabled{ opacity:.45; pointer-events:none; }
+    h1{ margin:0; font-size: clamp(18px, 2.2vw, 22px); }
+    .lead{ margin:0; color: var(--muted); font-size: 13px; }
 
-    .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; justify-content:center; align-items:center; z-index:100; padding:20px; }
+    /* ===== toolbar ===== */
+    .toolbar{
+      max-width: var(--maxw);
+      margin: 0 auto 8px;
+      padding: 0 10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+    }
+    .toolbar label{
+      font-size:13px;
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+    .toolbar select{
+      min-height: var(--tap);
+      padding:6px 8px;
+      font-size:14px;
+    }
+    .count{
+      color: var(--muted);
+      font-size:13px;
+      margin-left:auto;
+    }
+
+    /* ===== grid ===== */
+    .grid{
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 8px 14px;
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--minw), 1fr));
+      gap: var(--gap);
+    }
+
+    .card{
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+    }
+
+    .media-wrapper img{
+      width:100%;
+      display:block;
+    }
+
+    .caption{
+      padding: var(--pad);
+      font-size:14px;
+    }
+    .caption-title{
+      font-weight:600;
+      margin-bottom:2px;
+    }
+    .caption-desc{
+      font-size:13px;
+      color: var(--muted);
+    }
+
+    /* ===== pager ===== */
+    .pager{
+      max-width: var(--maxw);
+      margin: 6px auto 12px;
+      padding: 0 10px;
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .pager a,.pager span{
+      border:1px solid #dcdfe3;
+      padding:10px 12px;
+      border-radius:8px;
+      text-decoration:none;
+      color:#344054;
+      min-height: var(--tap);
+      display:inline-flex;
+      align-items:center;
+    }
+    .pager .active{
+      background: var(--accent);
+      color:#fff;
+      border-color: var(--accent);
+    }
+    .pager .disabled{
+      opacity:.4;
+      pointer-events:none;
+    }
+
+    /* ===== lightbox ===== */
+    .lightbox{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.9);
+      display:none;
+      justify-content:center;
+      align-items:center;
+      z-index:100;
+    }
     .lightbox.open{ display:flex; }
-    .lightbox img, .lightbox video{ max-width:100%; max-height:100%; border-radius: 8px; }
-    .lightbox button{ position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; font-size:24px; padding:8px 12px; cursor:pointer; border-radius:4px; }
-    .subcats.hidden{ display:none; }
+    .lightbox img{
+      max-width:96vw;
+      max-height:90vh;
+      border-radius:8px;
+    }
+    .lightbox button{
+      position:absolute;
+      top:20px;
+      right:20px;
+      font-size:24px;
+      background:#000;
+      color:#fff;
+      border:none;
+      padding:8px 12px;
+      cursor:pointer;
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <div>
-      <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
-      <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
-    </div>
-  </header>
 
-  <nav class="cats" id="js-cats" aria-label="カテゴリ"></nav>
-  <nav class="subcats hidden" id="js-subcats" aria-label="サブカテゴリ"></nav>
+<header>
+  <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
+  <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
+</header>
 
-  <div class="toolbar">
-    <div class="count" id="js-count">読み込み中…</div>
-    <label class="page-size">1ページ表示数：
-      <select id="js-page-size">
-        <option>12</option>
-        <option selected>24</option>
-        <option>36</option>
-        <option>48</option>
-      </select>
-    </label>
-  </div>
+<!-- ▼ カテゴリ UI（ドロップダウン） -->
+<div class="toolbar">
+  <label>
+    カテゴリ
+    <select id="js-cat-select"></select>
+  </label>
 
-  <main class="grid" id="js-grid"></main>
-  <nav class="pager" id="js-pager" aria-label="ページナビゲーション"></nav>
+  <label id="js-subcat-wrap" style="display:none;">
+    サブカテゴリ
+    <select id="js-subcat-select"></select>
+  </label>
 
-  <div class="lightbox" id="lightbox">
-    <button id="lbClose">✕</button>
-    <div id="lbContent"></div>
-  </div>
+  <div class="count" id="js-count">読み込み中…</div>
+</div>
 
+<main class="grid" id="js-grid"></main>
+<nav class="pager" id="js-pager"></nav>
 
-  <script>
-    const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/'; // 自動付与するベースURL
-    
-    let categories = ['all'];
-    let mediaData = [];
+<div class="lightbox" id="lightbox">
+  <button id="lbClose">✕</button>
+  <div id="lbContent"></div>
+</div>
 
-    const grid = document.getElementById('js-grid');
-    const pager = document.getElementById('js-pager');
-    const count = document.getElementById('js-count');
-    const pageSizeSelect = document.getElementById('js-page-size');
-    const catsNav = document.getElementById('js-cats');
-    const subcatsNav = document.getElementById('js-subcats');
+<script>
+/* ===== 既存 JS（必要最小限で整理） ===== */
 
-    function toSafeUrl(p){
-      if(!p) return '';
-      // 余分な空白・バックスラッシュ→スラッシュ・先頭 ./ を除去
-      let s = String(p).trim().replace(/\\/g, '/').replace(/^\.?\//, '');
-      // クエリやハッシュは保持してパス部分だけエンコード
-      const m = s.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
-      const path = (m?.[1] ?? '').split('/').map(seg => encodeURIComponent(seg)).join('/');
-      const query = m?.[2] ?? '';
-      const hash  = m?.[3] ?? '';
-      const joined = path + query + hash;
-      return BASE_URL ? new URL(joined, BASE_URL).toString() : joined;
-    }
-    function getParams(){
-      const sp = new URLSearchParams(location.search);
+const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/';
+let mediaData = [];
+
+const grid = document.getElementById('js-grid');
+const pager = document.getElementById('js-pager');
+const count = document.getElementById('js-count');
+
+const catSelect = document.getElementById('js-cat-select');
+const subcatSelect = document.getElementById('js-subcat-select');
+const subcatWrap = document.getElementById('js-subcat-wrap');
+
+let currentPage = 1;
+let pageSize = 24;
+let currentCat = 'all';
+let currentSubcat = 'all';
+
+function labelCat(c){ return c === 'all' ? 'すべて' : c; }
+
+/* ===== カテゴリ select ===== */
+function renderCatSelect(){
+  catSelect.innerHTML = '';
+  const cats = ['all', ...new Set(mediaData.map(d => d.category))];
+
+  cats.forEach(c=>{
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = labelCat(c);
+    o.selected = c === currentCat;
+    catSelect.appendChild(o);
+  });
+}
+
+/* ===== サブカテゴリ select ===== */
+function renderSubcatSelect(){
+  subcatSelect.innerHTML = '';
+
+  if(currentCat === 'all'){
+    subcatWrap.style.display = 'none';
+    return;
+  }
+
+  const map = new Map();
+  mediaData
+    .filter(d => d.category === currentCat)
+    .forEach(d=>{
+      (d.subcategoriesText || []).forEach(s=>{
+        if(!map.has(s.toLowerCase())) map.set(s.toLowerCase(), s);
+      });
+    });
+
+  if(map.size === 0){
+    subcatWrap.style.display = 'none';
+    return;
+  }
+
+  subcatWrap.style.display = '';
+
+  const all = document.createElement('option');
+  all.value = 'all';
+  all.textContent = 'すべて';
+  subcatSelect.appendChild(all);
+
+  for(const [k,v] of map){
+    const o = document.createElement('option');
+    o.value = k;
+    o.textContent = v;
+    o.selected = k === currentSubcat;
+    subcatSelect.appendChild(o);
+  }
+}
+
+/* ===== 描画 ===== */
+function render(){
+  renderCatSelect();
+  renderSubcatSelect();
+
+  let filtered = mediaData;
+  if(currentCat !== 'all'){
+    filtered = filtered.filter(d => d.category === currentCat);
+  }
+  if(currentSubcat !== 'all'){
+    filtered = filtered.filter(d => d.subcategories.includes(currentSubcat));
+  }
+
+  count.textContent = `${filtered.length} 件`;
+
+  grid.innerHTML = '';
+  filtered.forEach(item=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="media-wrapper">
+        <img src="${item.thumb || item.src}">
+      </div>
+      <div class="caption">
+        <div class="caption-title">${item.title}</div>
+        <div class="caption-desc">${item.categoryText}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ===== イベント ===== */
+catSelect.addEventListener('change',()=>{
+  currentCat = catSelect.value;
+  currentSubcat = 'all';
+  render();
+});
+subcatSelect.addEventListener('change',()=>{
+  currentSubcat = subcatSelect.value;
+  render();
+});
+
+/* ===== CSV 読み込み（簡略） ===== */
+fetch(BASE_URL + 'data.csv')
+  .then(r=>r.text())
+  .then(text=>{
+    const rows = text.split('\n').slice(1);
+    mediaData = rows.map(r=>{
+      const c = r.split(',');
       return {
-        page: Math.max(1, parseInt(sp.get('page') || '1', 10)),
-        size: Math.max(1, parseInt(sp.get('size') || '24', 10)),
-        cat: (sp.get('cat') || 'all').toLowerCase(),
-        subcat: (sp.get('subcat') || 'all').toLowerCase(),
+        category: (c[4]||'').toLowerCase(),
+        categoryText: c[4]||'',
+        subcategories: [c[5]?.toLowerCase()].filter(Boolean),
+        subcategoriesText: [c[5]].filter(Boolean),
+        title: c[2]||'',
+        src: BASE_URL + c[0],
+        thumb: BASE_URL + c[0]
       };
-    }
-    let {page: currentPage, size: pageSize, cat: currentCat, subcat: currentSubcat} = getParams();
+    });
+    render();
+  });
+</script>
 
-    function syncPageSizeSelect(){
-      [...pageSizeSelect.options].forEach(o => o.selected = (parseInt(o.value,10) === pageSize));
-    }
-    syncPageSizeSelect();
-
-    function applyMinWidthBySize(size){
-      let px;
-      if(size <= 12) px = 320;
-      else if(size <= 24) px = 260;
-      else if(size <= 36) px = 220;
-      else px = 200;
-      document.documentElement.style.setProperty('--minw', px + 'px');
-    }
-
-    function labelCat(cat){ return cat==='all'?'すべて':cat; }
-    function labelSubcat(sc){ return sc==='all'?'すべて':sc; }
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
-
-    function renderCats(activeCat){
-      catsNav.innerHTML = '';
-      const unique = ['all', ...new Set(mediaData.map(d => (d.category||'').toLowerCase()))];
-      unique.forEach(cat => {
-        const a = document.createElement('a');
-        a.href = `?cat=${encodeURIComponent(cat)}&subcat=all&page=1&size=${pageSize}`;
-        a.textContent = labelCat(cat);
-        a.className = 'cat' + (cat === activeCat ? ' active' : '');
-        a.addEventListener('click', e=>{
-          e.preventDefault();
-          navigate(1, pageSize, cat, 'all'); // カテゴリ切替時はsubcatをリセット
-        });
-        catsNav.appendChild(a);
-      });
-    }
-
-    function renderSubcats(activeCat, activeSubcat){
-      // cat=all の時は隠す（必要なら true に変えて常時表示に）
-      const SHOW_SUBS_ON_ALL = false;
-      const show = SHOW_SUBS_ON_ALL ? true : (activeCat !== 'all');
-
-      subcatsNav.classList.toggle('hidden', !show);
-      subcatsNav.innerHTML = '';
-      if(!show) return;
-
-      // 対象データ集合（カテゴリで絞る or 全体）
-      const source = SHOW_SUBS_ON_ALL
-        ? mediaData
-        : mediaData.filter(d => (d.category||'').toLowerCase() === activeCat);
-
-      // 表示名の重複を大文字小文字無視でまとめる（先に出た表記を採用）
-      const displayByKey = new Map(); // key: lower, val: 最初に見つかった表示名
-      for(const d of source){
-        const texts = d.subcategoriesText || [];
-        for(const t of texts){
-          const key = t.toLowerCase();
-          if(!displayByKey.has(key)) displayByKey.set(key, t);
-        }
-      }
-
-      // 空ならUIを隠す
-      if(displayByKey.size === 0){
-        subcatsNav.classList.add('hidden');
-        return;
-      }
-
-      // 'all' + 重複除去済みの表示名でボタン生成
-      const entries = Array.from(displayByKey.entries()); // [[key, label], ...]
-      const buttons = [['all','すべて'], ...entries];
-
-      for(const [key,label] of buttons){
-        const isAll = key === 'all';
-        const a = document.createElement('a');
-        a.href = `?cat=${encodeURIComponent(activeCat)}&subcat=${encodeURIComponent(key)}&page=1&size=${pageSize}`;
-        a.textContent = isAll ? 'すべて' : label;
-        a.className = 'subcat' + ((isAll ? 'all' : key) === activeSubcat ? ' active' : '');
-        a.addEventListener('click', e=>{
-          e.preventDefault();
-          navigate(1, pageSize, activeCat, isAll ? 'all' : key);
-        });
-        subcatsNav.appendChild(a);
-      }
-    }
-
-    function renderGrid(data){
-      grid.innerHTML = '';
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        const wrap = document.createElement('div');
-        wrap.className = 'media-wrapper';
-
-        // サムネイル画像表示（動画はthumbなし想定）
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.src = item.thumb || item.src;
-        wrap.appendChild(img);
-
-        const metaLineParts = [
-          item.categoryText,
-          (item.subcategoriesText && item.subcategoriesText.length)
-            ? item.subcategoriesText.join(' / ')
-            : null
-        ].filter(Boolean);
-
-        const cap = document.createElement('div');
-        cap.className = 'caption';
-        cap.innerHTML = `
-          <div class="caption-title">${escapeHtml(item.title)}</div>
-          <div class="caption-desc">${escapeHtml(metaLineParts.join(' / '))}
-          ${item.desc ? ' — ' + escapeHtml(item.desc) : ''}</div>`;
-
-        card.appendChild(wrap);
-        card.appendChild(cap);
-        card.addEventListener('click', () => openLightbox(item)); // クリックで拡大
-        grid.appendChild(card);
-      });
-    }
-
-    function renderPager(current,totalPages){
-      pager.innerHTML='';
-      const make=(p,label,disabled=false,active=false)=>{
-        const el=document.createElement(disabled?'span':'a');
-        el.textContent=label;
-        el.className=[disabled&&'disabled',active&&'active'].filter(Boolean).join(' ');
-        if(!disabled){
-          el.href=`?cat=${encodeURIComponent(currentCat)}&subcat=${encodeURIComponent(currentSubcat)}&page=${p}&size=${pageSize}`;
-          el.addEventListener('click',e=>{e.preventDefault();navigate(p,pageSize,currentCat,currentSubcat);});
-        }
-        pager.appendChild(el);
-      };
-      make(1,'« 最初',current===1);
-      make(Math.max(1,current-1),'‹ 前へ',current===1);
-      const span=3,from=Math.max(1,current-span),to=Math.min(totalPages,current+span);
-      for(let p=from;p<=to;p++) make(p,String(p),false,p===current);
-      make(Math.min(totalPages,current+1),'次へ ›',current===totalPages);
-      make(totalPages,'最後 »',current===totalPages);
-    }
-
-    function render(){
-      applyMinWidthBySize(pageSize);
-      renderCats(currentCat);
-      renderSubcats(currentCat, currentSubcat);
-
-      // フィルタリング
-      let filtered = mediaData;
-      if(currentCat !== 'all'){
-        filtered = filtered.filter(d => (d.category||'').toLowerCase() === currentCat);
-      }
-      if(currentCat !== 'all' && currentSubcat !== 'all'){
-        filtered = filtered.filter(d => (d.subcategories || []).includes(currentSubcat));
-      }
-
-      const total=filtered.length;
-      const totalPages=Math.max(1,Math.ceil(total/pageSize));
-      currentPage=Math.min(currentPage,totalPages);
-      const start=(currentPage-1)*pageSize;
-      const end=Math.min(start+pageSize,total);
-
-      const catLabel = labelCat(currentCat);
-      const subcatLabel = (currentCat!=='all' && currentSubcat!=='all') ? ` / ${labelSubcat(currentSubcat)}` : '';
-      count.textContent=`${catLabel}${subcatLabel}：${total}件中 ${total?(start+1):0}〜${end} を表示（ページ ${currentPage}/${totalPages}）`;
-
-      renderGrid(filtered.slice(start,end));
-      renderPager(currentPage,totalPages);
-    }
-
-    function navigate(p,size,cat,subcat){
-      currentPage=p;pageSize=size;currentCat=cat;currentSubcat=subcat ?? currentSubcat;
-      const qs=new URLSearchParams();
-      if(currentCat && currentCat!=='all') qs.set('cat',currentCat);
-      if(currentCat!=='all' && currentSubcat && currentSubcat!=='all') qs.set('subcat',currentSubcat);
-      qs.set('page',String(currentPage));
-      qs.set('size',String(pageSize));
-      history.pushState({},'',`${location.pathname}?${qs.toString()}`);
-      syncPageSizeSelect();
-      render();
-    }
-
-    pageSizeSelect.addEventListener('change',()=>{navigate(1,parseInt(pageSizeSelect.value,10)||24,currentCat,currentSubcat);});
-    window.addEventListener('popstate',()=>{({page:currentPage,size:pageSize,cat:currentCat,subcat:currentSubcat}=getParams());syncPageSizeSelect();render();});
-
-    const lb=document.getElementById('lightbox');const lbContent=document.getElementById('lbContent');
-    document.getElementById('lbClose').addEventListener('click',()=>lb.classList.remove('open'));
-    lb.addEventListener('click',e=>{if(e.target===lb)lb.classList.remove('open');});
-    function openLightbox(item){
-      lbContent.innerHTML = '';
-      if(item.type === 'video'){
-        const v = document.createElement('video');
-        v.src = item.src;  // 動画は通常srcでOK
-        v.controls = true;
-        v.autoplay = true;
-        v.playsInline = true;
-        v.muted = true;
-        if(item.poster) v.poster = item.poster;
-        lbContent.appendChild(v);
-      } else {
-        const img = document.createElement('img');
-        img.src = item.large || item.src;  // ← large画像を使用
-        lbContent.appendChild(img);
-      }
-      lb.classList.add('open');
-    }
-
-    // ===== CSV 読み込み =====
-    const csvUrl = new URL(BASE_URL + 'data.csv', location.href).toString();
-
-    fetch(csvUrl, { cache: 'no-store' })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
-        return r.text();
-      })
-      .then(text => applyCsv(text))
-      .catch(err => {
-        console.error('CSV fetch error:', err);
-        document.getElementById('js-count').textContent =
-          `CSVの取得に失敗しました：${err.message}（URL: ${csvUrl}）`;
-      });
-
-  function applyCsv(text){
-    const rows=parseCSV(text);
-    if(rows.length===0){count.textContent='CSVが空です';return;}
-    const header=rows[0].map(h=>h.trim());
-    const headerLower=header.map(h=>h.toLowerCase());
-
-    const idx={
-      filename: headerLower.indexOf('filename'),
-      type: headerLower.indexOf('type'),
-      title: headerLower.indexOf('title'),
-      desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
-      category: headerLower.indexOf('category'),
-      // ここを追加
-      sub1: headerLower.indexOf('subcategory1'),
-      sub2: headerLower.indexOf('subcategory2'),
-      sub3: headerLower.indexOf('subcategory3'),
-      poster: headerLower.indexOf('poster')
-    };
-    if(idx.filename===-1||idx.type===-1){
-      count.textContent='CSVに filename,type 列が必要です';
-      return;
-    }
-
-    mediaData = rows.slice(1)
-      .filter(r => r.length && r.some(c => String(c).trim()!==''))
-      .map(r => {
-        const filename=(r[idx.filename]||'').trim();
-        const type=String(r[idx.type]||'image').toLowerCase();
-        const title=(idx.title>=0?r[idx.title]:'')||'';
-        const desc=(idx.desc>=0?r[idx.desc]:'')||'';
-        const catText=(idx.category>=0?(r[idx.category]||'').trim():'')||'uncategorized';
-        const catLower=catText.toLowerCase();
-        const poster=(idx.poster>=0?r[idx.poster]:'')||'';
-
-        // subcategory1..3 を収集（空は除外）
-        const subsRaw = [idx.sub1, idx.sub2, idx.sub3]
-          .map(i => i>=0 ? (r[i]||'').toString().trim() : '')
-          .filter(Boolean);
-
-        // 大文字小文字を無視して重複除去（表示用の元文字列は保持）
-        const seen = new Set();
-        const subcategoriesText = [];
-        const subcategories = [];
-        for(const s of subsRaw){
-          const key = s.toLowerCase();
-          if(!seen.has(key)){
-            seen.add(key);
-            subcategories.push(key);          // 検索用（小文字）
-            subcategoriesText.push(s);        // 表示用（元のまま）
-          }
-        }
-
-        return {
-          category: catLower,
-          categoryText: catText,
-          subcategories,
-          subcategoriesText,
-          type,
-          src: toSafeUrl(filename),   // ← largeではなくベース名を保持
-          thumb: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-thumb.webp'),
-          large: toSafeUrl(filename.replace(/\.[^.]+$/, '') + '-large.webp'),
-          title,
-          desc,
-          poster: poster || undefined
-        };
-      });
-
-      categories=['all', ...new Set(mediaData.map(d=>d.category))];
-      if(currentCat!=='all' && !categories.includes(currentCat)) currentCat='all';
-      if(currentCat==='all') currentSubcat='all';
-      currentPage=1;
-      render();
-    }
-
-    function parseCSV(text){
-      const rows=[];let row=[],field='',i=0,inQuotes=false;
-      while(i<text.length){
-        const c=text[i];
-        if(inQuotes){
-          if(c==='"'){
-            if(text[i+1]==='"'){field+='"';i++;}else{inQuotes=false;}
-          }else{field+=c;}
-        }else{
-          if(c==='"'){inQuotes=true;}
-          else if(c===','){row.push(field);field='';}
-          else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
-          else if(c==='\r'){}
-          else{field+=c;}
-        }
-        i++;
-      }
-      if(field.length>0||row.length>0){row.push(field);rows.push(row);}
-      return rows;
-    }
-  </script>
 </body>
 </html>
