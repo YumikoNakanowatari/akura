@@ -516,10 +516,12 @@
           const srcSafe  = toSafeUrl(filenameRaw);
           const poster   = posterRaw ? toSafeUrl(posterRaw) : undefined;
 
-          const subsRaw = [idx.sub1, idx.sub2, idx.sub3]
-            .map(i => i>=0 ? (r[i]||'').toString().trim() : '')
-            .filter(Boolean);
-
+          const subsRaw = [
+            idx.event >= 0 ? (r[idx.event] || '').toString().trim() : '',
+            idx.sub1 >= 0 ? (r[idx.sub1] || '').toString().trim() : '',
+            idx.sub2 >= 0 ? (r[idx.sub2] || '').toString().trim() : ''
+          ].filter(Boolean);
+          
           const seen = new Set();
           const subcategoriesText = [];
           const subcategories = [];
