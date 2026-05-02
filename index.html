@@ -123,16 +123,16 @@
   <!-- ▼ ここがボタン → ドロップダウン -->
   <div class="filters" aria-label="フィルタ">
     <label>
-      大会名
+      年度
       <select id="js-cat-select"></select>
     </label>
 
     <label id="js-subcat-wrap" style="display:none;">
-      メンバー名
+      大会名
       <select id="js-subcat-select"></select>
     </label>
 
-    <span class="hint">※大会名を選ぶとメンバー名が出ます</span>
+    <span class="hint">※年度を選ぶと大会名が出ます</span>
   </div>
 
   <!-- 既存の「1ページ表示数」はそのまま残す -->
@@ -389,7 +389,6 @@
       const catLabel = labelCat(currentCat);
       const subcatLabel = (currentCat!=='all' && currentSubcat!=='all') ? ` / ${labelSubcat(currentSubcat)}` : '';
       count.textContent=`${catLabel}${subcatLabel}：${total}件中 ${total?(start+1):0}〜${end} を表示（ページ ${currentPage}/${totalPages}）`;
-
       renderGrid(filtered.slice(start,end));
       renderPager(currentPage,totalPages);
 
