@@ -123,16 +123,16 @@
   <!-- ▼ ここがボタン → ドロップダウン -->
   <div class="filters" aria-label="フィルタ">
     <label>
-      大会名
+      年度
       <select id="js-cat-select"></select>
     </label>
 
     <label id="js-subcat-wrap" style="display:none;">
-      メンバー名
+      大会名
       <select id="js-subcat-select"></select>
     </label>
 
-    <span class="hint">※大会名を選ぶとメンバー名が出ます</span>
+    <span class="hint">※年度を選ぶと大会名が出ます</span>
   </div>
 
   <!-- 既存の「1ページ表示数」はそのまま残す -->
@@ -170,6 +170,8 @@
     const catSelect = document.getElementById('js-cat-select');
     const subcatSelect = document.getElementById('js-subcat-select');
     const subcatWrap = document.getElementById('js-subcat-wrap');
+    const yearSelect = document.getElementById('js-year-select');
+    
 
     function getYouTubeId(u){
       if(!u) return null;
@@ -210,13 +212,29 @@
         size: Math.max(1, parseInt(sp.get('size') || '24', 10)),
         cat: (sp.get('cat') || 'all').toLowerCase(),
         subcat: (sp.get('subcat') || 'all').toLowerCase(),
+        year: (sp.get('year') || 'all').toLowerCase(), // 追加
       };
     }
-    let {page: currentPage, size: pageSize, cat: currentCat, subcat: currentSubcat} = getParams();
+    let {page: currentPage, size: pageSize, cat: currentCat, subcat: currentSubcat, year: currentYear} = getParams();
 
     function syncPageSizeSelect(){
       [...pageSizeSelect.options].forEach(o => o.selected = (parseInt(o.value,10) === pageSize));
     }
+    function renderYearSelect(activeYear){
+      yearSelect.innerHTML = '';
+
+      const years = ['all', ...new Set(mediaData.map(d => (d.year||'').toLowerCase()))];
+
+      for(const y of years){
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y === 'all' ? 'すべて' : y;
+        yearSelect.appendChild(opt);
+      }
+
+      yearSelect.value = activeYear;
+    }
+
     function syncFilterSelects(){
       if(catSelect){
         catSelect.value = currentCat;
@@ -368,11 +386,15 @@
       applyMinWidthBySize(pageSize);
 
       // ▼ dropdownを描画
+      renderYearSelect(currentYear);
       renderCatSelect(currentCat);
       renderSubcatSelect(currentCat, currentSubcat);
 
       // フィルタリング
       let filtered = mediaData;
+      if(currentYear !== 'all'){
+        filtered = filtered.filter(d => (d.year || '') === currentYear);
+      }
       if(currentCat !== 'all'){
         filtered = filtered.filter(d => (d.category||'').toLowerCase() === currentCat);
       }
@@ -389,7 +411,6 @@
       const catLabel = labelCat(currentCat);
       const subcatLabel = (currentCat!=='all' && currentSubcat!=='all') ? ` / ${labelSubcat(currentSubcat)}` : '';
       count.textContent=`${catLabel}${subcatLabel}：${total}件中 ${total?(start+1):0}〜${end} を表示（ページ ${currentPage}/${totalPages}）`;
-
       renderGrid(filtered.slice(start,end));
       renderPager(currentPage,totalPages);
 
@@ -397,19 +418,29 @@
       syncFilterSelects();
     }
 
-    function navigate(p,size,cat,subcat){
-      currentPage=p;pageSize=size;currentCat=cat;currentSubcat=subcat ?? currentSubcat;
+    function navigate(p,size,cat,subcat,year){
+      currentPage=p;
+      pageSize=size;
+      currentCat=cat;
+      currentSubcat=subcat;
+      currentYear=year ?? currentYear;
+
       const qs=new URLSearchParams();
-      if(currentCat && currentCat!=='all') qs.set('cat',currentCat);
-      if(currentCat!=='all' && currentSubcat && currentSubcat!=='all') qs.set('subcat',currentSubcat);
+      if(currentCat!=='all') qs.set('cat',currentCat);
+      if(currentSubcat!=='all') qs.set('subcat',currentSubcat);
+      if(currentYear!=='all') qs.set('year',currentYear);
+
       qs.set('page',String(currentPage));
       qs.set('size',String(pageSize));
+
       history.pushState({},'',`${location.pathname}?${qs.toString()}`);
-      syncPageSizeSelect();
       render();
     }
-
     // ▼ dropdownイベント
+    yearSelect.addEventListener('change', ()=>{
+      const year = (yearSelect.value || 'all').toLowerCase();
+      navigate(1, pageSize, currentCat, currentSubcat, year);
+    });
     catSelect.addEventListener('change', ()=>{
       const cat = (catSelect.value || 'all').toLowerCase();
       navigate(1, pageSize, cat, 'all'); // カテゴリ変更でサブカテゴリリセット
@@ -485,6 +516,7 @@
         type: headerLower.indexOf('type'),
         title: headerLower.indexOf('title'),
         desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
+        year: headerLower.indexOf('year'), // 追加
         category: headerLower.indexOf('category'),
         sub1: headerLower.indexOf('subcategory1'),
         sub2: headerLower.indexOf('subcategory2'),
@@ -529,7 +561,7 @@
               subcategoriesText.push(s);
             }
           }
-
+          const year = (idx.year >= 0 ? (r[idx.year] || '').trim() : '').toLowerCase();
           return {
             category: catLower,
             categoryText: catText,
@@ -543,7 +575,8 @@
             ytId: ytId || undefined,
             title,
             desc,
-            poster: poster || undefined
+            poster: poster || undefined,
+            year
           };
         });
 
