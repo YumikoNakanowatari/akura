@@ -485,9 +485,12 @@
         title: headerLower.indexOf('title'),
         desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
         category: headerLower.indexOf('category'),
+
+        // ★ここ変更
+        event: headerLower.indexOf('event'),
         sub1: headerLower.indexOf('subcategory1'),
         sub2: headerLower.indexOf('subcategory2'),
-        sub3: headerLower.indexOf('subcategory3'),
+
         poster: headerLower.indexOf('poster')
       };
       if(idx.filename===-1||idx.type===-1){
