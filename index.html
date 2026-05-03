@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>安倉バレーボールクラブ</title>
-
   <style>
     :root{
       --maxw: 1200px;
@@ -22,146 +21,422 @@
       --tap: 44px;
     }
     *{ box-sizing: border-box; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Meiryo, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-    }
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", Meiryo, sans-serif; background: var(--bg); color: var(--fg); }
 
-    header{
-      max-width: var(--maxw);
-      margin: 12px auto 6px;
-      padding: 0 10px;
-    }
-
+    header{ max-width: var(--maxw); margin: 12px auto 6px; padding: 0 10px; }
     h1{ margin:0; font-size: clamp(18px, 2.2vw, 22px); }
-    .lead{ margin:0; color: var(--muted); font-size: 13px; }
+    .lead{ margin:0; color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
 
-    /* ===== toolbar ===== */
-    .toolbar{
+    /* タイトル左右アイコン */
+    .title-with-icons{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      line-height: 1.2;
+    }
+    .title-with-icons::before,
+    .title-with-icons::after{
+      content: "";
+      display: inline-block;
+      width: 1.8em;
+      height: 1.8em;
+      background: no-repeat center / contain;
+      transform: translateY(0.06em);
+    }
+    .title-with-icons::before{
+      background-image: url("https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/assets/left-icon.jpg");
+    }
+    .title-with-icons::after{
+      background-image: url("https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/assets/right-icon.jpg");
+    }
+
+    /* ▼ ドロップダウン（カテゴリ/サブカテゴリ） */
+    .filters{
       max-width: var(--maxw);
       margin: 0 auto 8px;
       padding: 0 10px;
       display:flex;
-      flex-wrap:wrap;
-      gap:12px;
-      align-items:center;
-    }
-    .toolbar label{
-      font-size:13px;
-      display:flex;
-      gap:6px;
-      align-items:center;
-    }
-    .toolbar select{
-      min-height: var(--tap);
-      padding:6px 8px;
-      font-size:14px;
-    }
-    .count{
-      color: var(--muted);
-      font-size:13px;
-      margin-left:auto;
-    }
-
-    /* ===== grid ===== */
-    .grid{
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 0 8px 14px;
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(var(--minw), 1fr));
-      gap: var(--gap);
-    }
-
-    .card{
-      background: var(--card);
-      border-radius: var(--radius);
-      overflow:hidden;
-      box-shadow: var(--shadow);
-      cursor:pointer;
-    }
-
-    .media-wrapper img{
-      width:100%;
-      display:block;
-    }
-
-    .caption{
-      padding: var(--pad);
-      font-size:14px;
-    }
-    .caption-title{
-      font-weight:600;
-      margin-bottom:2px;
-    }
-    .caption-desc{
-      font-size:13px;
-      color: var(--muted);
-    }
-
-    /* ===== pager ===== */
-    .pager{
-      max-width: var(--maxw);
-      margin: 6px auto 12px;
-      padding: 0 10px;
-      display:flex;
       gap:8px;
-      justify-content:center;
       flex-wrap:wrap;
-    }
-    .pager a,.pager span{
-      border:1px solid #dcdfe3;
-      padding:10px 12px;
-      border-radius:8px;
-      text-decoration:none;
-      color:#344054;
-      min-height: var(--tap);
-      display:inline-flex;
       align-items:center;
     }
-    .pager .active{
-      background: var(--accent);
-      color:#fff;
-      border-color: var(--accent);
+    .filters label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size: 13px;
+      color: var(--fg);
     }
-    .pager .disabled{
-      opacity:.4;
-      pointer-events:none;
+    .filters select{
+      padding:6px 10px;
+      min-height: var(--tap);
+      border: 1px solid #dcdfe3;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+    }
+    .filters .hint{
+      color: var(--muted);
+      font-size: 12px;
     }
 
-    /* ===== lightbox ===== */
-    .lightbox{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.9);
-      display:none;
-      justify-content:center;
-      align-items:center;
-      z-index:100;
+    /* 既存: toolbar（件数表示 + 1ページ表示数） */
+    .toolbar{ max-width: var(--maxw); margin: 0 auto 8px; padding: 0 10px; display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
+    .toolbar .count{ color: var(--muted); font-size: 13px; }
+    .toolbar .page-size{ display:flex; align-items:center; gap:8px; font-size: 13px; }
+    .toolbar select{ padding:6px 8px; min-height: var(--tap); }
+
+    .grid{ max-width: var(--maxw); margin: 0 auto; padding: 0 8px 14px; display:grid; grid-template-columns: repeat(auto-fill, minmax(var(--minw), 1fr)); gap: var(--gap); }
+
+    .card{ background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; cursor:pointer; }
+    .media-wrapper{ position:relative; overflow:hidden; background:#f2f2f2; }
+    .media-wrapper img, .media-wrapper video{ width:100%; height:auto; display:block; object-fit:cover; }
+
+    @media (hover: hover){
+      .media-wrapper img, .media-wrapper video{ transition: transform .35s ease; }
+      .media-wrapper:hover img, .media-wrapper:hover video{ transform: scale(1.05); }
     }
+
+    .caption{ padding: var(--pad) calc(var(--pad) + 2px); font-size: 14px; }
+    .caption-title{ font-weight:600; margin-bottom: 2px; font-size: 14px; }
+    .caption-desc{ font-size: 13px; color: var(--muted); }
+
+    .pager{ max-width: var(--maxw); margin: 4px auto 12px; padding: 0 10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; }
+    .pager a, .pager span{ border:1px solid #dcdfe3; background:#fff; color:#344054; text-decoration:none; padding:10px 12px; border-radius: 8px; font-size: 14px; line-height:1; min-height: var(--tap); display:inline-flex; align-items:center; }
+    .pager .active{ background: var(--accent); color:#fff; border-color: var(--accent); }
+    .pager .disabled{ opacity:.45; pointer-events:none; }
+
+    .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; justify-content:center; align-items:center; z-index:100; padding:20px; }
     .lightbox.open{ display:flex; }
-    .lightbox img{
-      max-width:96vw;
-      max-height:90vh;
-      border-radius:8px;
-    }
-    .lightbox button{
-      position:absolute;
-      top:20px;
-      right:20px;
-      font-size:24px;
-      background:#000;
-      color:#fff;
-      border:none;
-      padding:8px 12px;
-      cursor:pointer;
-    }
+    .lightbox img, .lightbox video{ max-width:100%; max-height:100%; border-radius: 8px; }
+    .lightbox button{ position:absolute; top:20px; right:20px; background:#000; color:#fff; border:none; font-size:24px; padding:8px 12px; cursor:pointer; border-radius:4px; }
   </style>
 </head>
-
 <body>
+  <header>
+    <div>
+      <h1 class="title-with-icons">安倉バレーボールクラブでの挑戦と成長の日々</h1>
+      <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
+    </div>
+  </header>
+
+  <!-- ▼ ここがボタン → ドロップダウン -->
+  <div class="filters" aria-label="フィルタ">
+    <label>
+      年度
+      <select id="js-year-select"></select>
+    </label>
+    <label>
+      大会名
+      <select id="js-cat-select"></select>
+    </label>
+
+    <label id="js-subcat-wrap" style="display:none;">
+      メンバー名
+      <select id="js-subcat-select"></select>
+    </label>
+
+    <span class="hint">※大会名を選ぶとメンバー名が出ます</span>
+  </div>
+
+  <!-- 既存の「1ページ表示数」はそのまま残す -->
+  <div class="toolbar">
+    <div class="count" id="js-count">読み込み中…</div>
+    <label class="page-size">1ページ表示数：
+      <select id="js-page-size">
+        <option>12</option>
+        <option selected>24</option>
+        <option>36</option>
+        <option>48</option>
+      </select>
+    </label>
+  </div>
+
+  <main class="grid" id="js-grid"></main>
+  <nav class="pager" id="js-pager" aria-label="ページナビゲーション"></nav>
+
+  <div class="lightbox" id="lightbox">
+    <button id="lbClose">✕</button>
+    <div id="lbContent"></div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/'; // 自動付与するベースURL
+    let categories = ['all'];
+    let mediaData = [];
+
+    const grid = document.getElementById('js-grid');
+    const pager = document.getElementById('js-pager');
+    const count = document.getElementById('js-count');
+    const pageSizeSelect = document.getElementById('js-page-size');
+
+    // ▼ dropdown要素
+    const yearSelect = document.getElementById('js-year-select');
+    let currentYear = 'all';
+    const catSelect = document.getElementById('js-cat-select');
+    const subcatSelect = document.getElementById('js-subcat-select');
+    const subcatWrap = document.getElementById('js-subcat-wrap');
+
+    function getYouTubeId(u){
+      if(!u) return null;
+      try{
+        const url = new URL(u, location.href);
+        const host = url.hostname.replace(/^www\./,'');
+        if(host === 'youtu.be'){
+          return url.pathname.slice(1) || null;
+        }
+        if(host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com'){
+          if(url.pathname === '/watch') return url.searchParams.get('v');
+          const m = url.pathname.match(/^\/embed\/([^/?#]+)/);
+          if(m) return m[1];
+        }
+      }catch(e){}
+      const m = String(u).match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+      return m ? m[1] : null;
+    }
+
+    function youTubeThumb(id){ return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`; }
+    function youTubeEmbed(id){ return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`; }
+
+    function toSafeUrl(p){
+      if(!p) return '';
+      let s = String(p).trim().replace(/\\/g, '/').replace(/^\.?\//, '');
+      const m = s.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+      const path = (m?.[1] ?? '').split('/').map(seg => encodeURIComponent(seg)).join('/');
+      const query = m?.[2] ?? '';
+      const hash  = m?.[3] ?? '';
+      const joined = path + query + hash;
+      return BASE_URL ? new URL(joined, BASE_URL).toString() : joined;
+    }
+
+    function getParams(){
+      const sp = new URLSearchParams(location.search);
+      return {
+        page: Math.max(1, parseInt(sp.get('page') || '1', 10)),
+        size: Math.max(1, parseInt(sp.get('size') || '24', 10)),
+        year: (sp.get('year') || 'all').toLowerCase(),
+        cat: (sp.get('cat') || 'all').toLowerCase(),
+        subcat: (sp.get('subcat') || 'all').toLowerCase(),
+      };
+    }
+    let {page: currentPage, size: pageSize, cat: currentCat, subcat: currentSubcat} = getParams();
+
+    function syncPageSizeSelect(){
+      [...pageSizeSelect.options].forEach(o => o.selected = (parseInt(o.value,10) === pageSize));
+    }
+    function syncFilterSelects(){
+      if(catSelect){
+        catSelect.value = currentCat;
+      }
+      if(subcatSelect){
+        subcatSelect.value = currentSubcat;
+      }
+    }
+
+    syncPageSizeSelect();
+
+    function applyMinWidthBySize(size){
+      let px;
+      if(size <= 12) px = 320;
+      else if(size <= 24) px = 260;
+      else if(size <= 36) px = 220;
+      else px = 200;
+      document.documentElement.style.setProperty('--minw', px + 'px');
+    }
+
+    function labelCat(cat){ return cat==='all'?'すべて':cat; }
+    function labelSubcat(sc){ return sc==='all'?'すべて':sc; }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+    // ▼ ここが「ボタン生成」ではなく「select option生成」
+    function renderYearSelect(activeYear){
+      yearSelect.innerHTML = '';
+
+      const unique = ['all', ...new Set(mediaData.map(d => d.year))];
+
+      for(const y of unique){
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y === 'all' ? 'すべて' : y;
+        yearSelect.appendChild(opt);
+      }
+
+      yearSelect.value = activeYear;
+    }
+    function renderCatSelect(activeCat){
+      catSelect.innerHTML = '';
+      const unique = ['all', ...new Set(mediaData.map(d => (d.category||'').toLowerCase()))];
+      for(const cat of unique){
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = labelCat(cat);
+        catSelect.appendChild(opt);
+      }
+      catSelect.value = activeCat;
+    }
+
+    function renderSubcatSelect(activeCat, activeSubcat){
+      // cat=all の時は非表示（必要なら true に）
+      const SHOW_SUBS_ON_ALL = false;
+      const show = SHOW_SUBS_ON_ALL ? true : (activeCat !== 'all');
+
+      subcatWrap.style.display = show ? '' : 'none';
+      subcatSelect.innerHTML = '';
+      if(!show) return;
+
+      const source = SHOW_SUBS_ON_ALL
+        ? mediaData
+        : mediaData.filter(d => (d.category||'').toLowerCase() === activeCat);
+
+      const displayByKey = new Map(); // key: lower, val: 最初に見つかった表示名
+      for(const d of source){
+        const texts = d.subcategoriesText || [];
+        for(const t of texts){
+          const key = t.toLowerCase();
+          if(!displayByKey.has(key)) displayByKey.set(key, t);
+        }
+      }
+
+      if(displayByKey.size === 0){
+        subcatWrap.style.display = 'none';
+        return;
+      }
+
+      // all + 各サブカテゴリ
+      {
+        const optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = 'すべて';
+        subcatSelect.appendChild(optAll);
+      }
+      for(const [key,label] of displayByKey.entries()){
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = label;
+        subcatSelect.appendChild(opt);
+      }
+
+      subcatSelect.value = activeSubcat;
+    }
+
+    function renderGrid(data){
+      grid.innerHTML = '';
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'media-wrapper';
+
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = item.thumb || item.src;   // ★元ロジック維持（thumbがあればthumb）
+        wrap.appendChild(img);
+
+        if(item.isYouTube){
+          const badge = document.createElement('div');
+          badge.style.position='absolute';
+          badge.style.inset='0';
+          badge.style.display='grid';
+          badge.style.placeItems='center';
+          badge.style.pointerEvents='none';
+          badge.innerHTML = `<div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.5);display:grid;place-items:center;">
+            <div style="margin-left:4px;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:20px solid #fff;"></div>
+          </div>`;
+          wrap.appendChild(badge);
+        }
+
+        const metaLineParts = [
+          item.categoryText,
+          (item.subcategoriesText && item.subcategoriesText.length) ? item.subcategoriesText.join(' / ') : null
+        ].filter(Boolean);
+
+        const cap = document.createElement('div');
+        cap.className = 'caption';
+        cap.innerHTML = `
+          <div class="caption-title">${escapeHtml(item.title)}</div>
+          <div class="caption-desc">${escapeHtml(metaLineParts.join(' / '))}
+          ${item.desc ? ' — ' + escapeHtml(item.desc) : ''}</div>`;
+
+        card.appendChild(wrap);
+        card.appendChild(cap);
+        card.addEventListener('click', () => openLightbox(item));
+        grid.appendChild(card);
+      });
+    }
+
+    function renderPager(current,totalPages){
+      pager.innerHTML='';
+      const make=(p,label,disabled=false,active=false)=>{
+        const el=document.createElement(disabled?'span':'a');
+        el.textContent=label;
+        el.className=[disabled&&'disabled',active&&'active'].filter(Boolean).join(' ');
+        if(!disabled){
+          el.href=`?cat=${encodeURIComponent(currentCat)}&subcat=${encodeURIComponent(currentSubcat)}&page=${p}&size=${pageSize}`;
+          el.addEventListener('click',e=>{e.preventDefault();navigate(p,pageSize,currentCat,currentSubcat);});
+        }
+        pager.appendChild(el);
+      };
+      make(1,'« 最初',current===1);
+      make(Math.max(1,current-1),'‹ 前へ',current===1);
+      const span=3,from=Math.max(1,current-span),to=Math.min(totalPages,current+span);
+      for(let p=from;p<=to;p++) make(p,String(p),false,p===current);
+      make(Math.min(totalPages,current+1),'次へ ›',current===totalPages);
+      make(totalPages,'最後 »',current===totalPages);
+    }
+
+    function render(){
+      applyMinWidthBySize(pageSize);
+
+      // ▼ dropdownを描画
+      renderYearSelect(currentYear);
+      renderCatSelect(currentCat);
+      renderSubcatSelect(currentCat, currentSubcat);
+
+      // フィルタリング
+      let filtered = mediaData;
+
+      if(currentYear !== 'all'){
+        filtered = filtered.filter(d => d.year === currentYear);
+      }
+
+      if(currentCat !== 'all'){
+        filtered = filtered.filter(d => d.category === currentCat);
+      }
+
+      if(currentCat !== 'all' && currentSubcat !== 'all'){
+        filtered = filtered.filter(d => d.subcategories.includes(currentSubcat));
+      }
+
+      const total=filtered.length;
+      const totalPages=Math.max(1,Math.ceil(total/pageSize));
+      currentPage=Math.min(currentPage,totalPages);
+      const start=(currentPage-1)*pageSize;
+      const end=Math.min(start+pageSize,total);
+
+      const catLabel = labelCat(currentCat);
+      const subcatLabel = (currentCat!=='all' && currentSubcat!=='all') ? ` / ${labelSubcat(currentSubcat)}` : '';
+      count.textContent=`${catLabel}${subcatLabel}：${total}件中 ${total?(start+1):0}〜${end} を表示（ページ ${currentPage}/${totalPages}）`;
+
+      renderGrid(filtered.slice(start,end));
+      renderPager(currentPage,totalPages);
+
+      // 現在値を同期
+      syncFilterSelects();
+    }
+
+    function navigate(p,size,cat,subcat){
+      currentPage=p;pageSize=size;currentCat=cat;currentSubcat=subcat ?? currentSubcat;
+      const qs=new URLSearchParams();
+      if(currentYear !== 'all') qs.set('year', currentYear);
+      if(currentCat && currentCat!=='all') qs.set('cat',currentCat);
+      if(currentCat!=='all' && currentSubcat && currentSubcat!=='all') qs.set('subcat',currentSubcat);
+      qs.set('page',String(currentPage));
+      qs.set('size',String(pageSize));
+      history.pushState({},'',`${location.pathname}?${qs.toString()}`);
+      syncPageSizeSelect();
+      render();
+    }
 
 <header>
   <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
@@ -267,106 +542,181 @@ function renderSubcatSelect(){
       (d.subcategoriesText || []).forEach(s=>{
         if(!map.has(s.toLowerCase())) map.set(s.toLowerCase(), s);
       });
+    // ▼ dropdownイベント
+    yearSelect.addEventListener('change', ()=>{
+      const y = yearSelect.value || 'all';
+      currentYear = y;
+      navigate(1, pageSize, 'all', 'all'); // リセット
+    });
+    catSelect.addEventListener('change', ()=>{
+      const cat = (catSelect.value || 'all').toLowerCase();
+      navigate(1, pageSize, cat, 'all'); // カテゴリ変更でサブカテゴリリセット
+    });
+    subcatSelect.addEventListener('change', ()=>{
+      const sub = (subcatSelect.value || 'all').toLowerCase();
+      navigate(1, pageSize, currentCat, sub);
     });
 
-  if(map.size === 0){
-    subcatWrap.style.display = 'none';
-    return;
-  }
+    pageSizeSelect.addEventListener('change',()=>{navigate(1,parseInt(pageSizeSelect.value,10)||24,currentCat,currentSubcat);});
+    window.addEventListener('popstate',()=>{
+      ({page:currentPage,size:pageSize,cat:currentCat,subcat:currentSubcat}=getParams());
+      syncPageSizeSelect();
+      render();
+    });
 
-  subcatWrap.style.display = '';
+    const lb=document.getElementById('lightbox');
+    const lbContent=document.getElementById('lbContent');
+    document.getElementById('lbClose').addEventListener('click',()=>lb.classList.remove('open'));
+    lb.addEventListener('click',e=>{if(e.target===lb)lb.classList.remove('open');});
 
-  const all = document.createElement('option');
-  all.value = 'all';
-  all.textContent = 'すべて';
-  subcatSelect.appendChild(all);
+    function openLightbox(item){
+      lbContent.innerHTML = '';
+      if(item.isYouTube){
+        const ifr = document.createElement('iframe');
+        ifr.src = item.large;
+        ifr.width = '100%';
+        ifr.height = '100%';
+        ifr.style.maxWidth = 'min(96vw, 1280px)';
+        ifr.style.maxHeight = '80vh';
+        ifr.style.aspectRatio = '16 / 9';
+        ifr.setAttribute('frameborder','0');
+        ifr.setAttribute('allow','accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+        ifr.setAttribute('allowfullscreen','true');
+        lbContent.appendChild(ifr);
+      } else if(item.type === 'video'){
+        const v = document.createElement('video');
+        v.src = item.src;
+        v.controls = true; v.autoplay = true; v.playsInline = true; v.muted = true;
+        if(item.poster) v.poster = item.poster;
+        lbContent.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = item.large || item.src;
+        lbContent.appendChild(img);
+      }
+      lb.classList.add('open');
+    }
 
-  for(const [k,v] of map){
-    const o = document.createElement('option');
-    o.value = k;
-    o.textContent = v;
-    o.selected = k === currentSubcat;
-    subcatSelect.appendChild(o);
-  }
-}
+    // ===== CSV 読み込み =====
+    const csvUrl = new URL(BASE_URL + 'data.csv', location.href).toString();
 
+    fetch(csvUrl, { cache: 'no-store' })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);
+        return r.text();
+      })
+      .then(text => applyCsv(text))
+      .catch(err => {
+        console.error('CSV fetch error:', err);
+        document.getElementById('js-count').textContent =
+          `CSVの取得に失敗しました：${err.message}（URL: ${csvUrl}）`;
+      });
 
-/* ===== 描画 ===== */
-function render(){
-  renderYearSelect();   // ← 追加
-  renderCatSelect();
-  renderSubcatSelect();
+    function applyCsv(text){
+      const rows=parseCSV(text);
+      if(rows.length===0){count.textContent='CSVが空です';return;}
+      const header=rows[0].map(h=>h.trim());
+      const headerLower=header.map(h=>h.toLowerCase());
 
-  let filtered = mediaData;
-
-  if(currentYear !== 'all'){
-    filtered = filtered.filter(d => d.year === currentYear);
-  }
-  if(currentCat !== 'all'){
-    filtered = filtered.filter(d => d.category === currentCat);
-  }
-  if(currentSubcat !== 'all'){
-    filtered = filtered.filter(d => d.subcategories.includes(currentSubcat));
-  }
-
-  count.textContent = `${filtered.length} 件`;
-
-  grid.innerHTML = '';
-  filtered.forEach(item=>{
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="media-wrapper">
-        <img src="${item.thumb || item.src}">
-      </div>
-      <div class="caption">
-        <div class="caption-title">${item.title}</div>
-        <div class="caption-desc">${item.categoryText}</div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-/* ===== イベント ===== */
-yearSelect.addEventListener('change',()=>{
-  currentYear = yearSelect.value;
-  currentCat = 'all';
-  currentSubcat = 'all';
-  render();
-});
-catSelect.addEventListener('change',()=>{
-  currentCat = catSelect.value;
-  currentSubcat = 'all';
-  render();
-});
-subcatSelect.addEventListener('change',()=>{
-  currentSubcat = subcatSelect.value;
-  render();
-});
-
-/* ===== CSV 読み込み（簡略） ===== */
-fetch(BASE_URL + 'data.csv')
-  .then(r=>r.text())
-  .then(text=>{
-    const rows = text.split('\n').slice(1);
-    mediaData = rows.map(r=>{
-      const c = r.split(',');
-      return {
-        year: (c[4]||'').toLowerCase(),   // ← 追加
-        yearText: c[4]||'',               // ← 追加
-        category: (c[5]||'').toLowerCase(),
-        categoryText: c[5]||'',
-        subcategories: [c[6]?.toLowerCase()].filter(Boolean),
-        subcategoriesText: [c[6]].filter(Boolean),
-        title: c[2]||'',
-        src: BASE_URL + c[0],
-        thumb: BASE_URL + c[0]
+      const idx={
+        filename: headerLower.indexOf('filename'),
+        type: headerLower.indexOf('type'),
+        title: headerLower.indexOf('title'),
+        desc: headerLower.indexOf('description')>=0?headerLower.indexOf('description'):headerLower.indexOf('desc'),
+        year: headerLower.indexOf('year'), // ★追加
+        category: headerLower.indexOf('category'),
+        sub1: headerLower.indexOf('subcategory1'),
+        sub2: headerLower.indexOf('subcategory2'),
+        sub3: headerLower.indexOf('subcategory3'),
+        poster: headerLower.indexOf('poster')
       };
-    });
-    render();
-  });
-</script>
+      if(idx.filename===-1||idx.type===-1){
+        count.textContent='CSVに filename,type 列が必要です';
+        return;
+      }
 
+      mediaData = rows.slice(1)
+        .filter(r => r.length && r.some(c => String(c).trim()!=='')) // 空行除外
+        .map(r => {
+          const filenameRaw = (r[idx.filename]||'').trim();
+          let type = String(r[idx.type]||'image').toLowerCase();
+          const title=(idx.title>=0?r[idx.title]:'')||'';
+          const desc=(idx.desc>=0?r[idx.desc]:'')||'';
+          const yearText = (idx.year>=0 ? (r[idx.year]||'').trim() : '') || 'unknown';
+          const yearLower = yearText.toLowerCase();
+          const catText=(idx.category>=0?(r[idx.category]||'').trim():'')||'uncategorized';
+          const catLower=catText.toLowerCase();
+          const posterRaw = (idx.poster>=0 ? r[idx.poster] : '') || '';
+
+          const ytId = getYouTubeId(filenameRaw);
+          if(ytId) type = 'youtube';
+
+          const baseName = filenameRaw.replace(/\.[^.]+$/, '');
+          const srcSafe  = toSafeUrl(filenameRaw);
+          const poster   = posterRaw ? toSafeUrl(posterRaw) : undefined;
+
+          const subsRaw = [idx.sub1, idx.sub2, idx.sub3]
+            .map(i => i>=0 ? (r[i]||'').toString().trim() : '')
+            .filter(Boolean);
+
+          const seen = new Set();
+          const subcategoriesText = [];
+          const subcategories = [];
+          for(const s of subsRaw){
+            const key = s.toLowerCase();
+            if(!seen.has(key)){
+              seen.add(key);
+              subcategories.push(key);
+              subcategoriesText.push(s);
+            }
+          }
+
+          return {
+            year: yearLower,
+            yearText: yearText,
+            category: catLower,
+            categoryText: catText,
+            subcategories,
+            subcategoriesText,
+            type,
+            src: srcSafe,
+            thumb: ytId ? youTubeThumb(ytId) : toSafeUrl(baseName + '-thumb.webp'),
+            large: ytId ? youTubeEmbed(ytId) : toSafeUrl(baseName + '-large.webp'),
+            isYouTube: !!ytId,
+            ytId: ytId || undefined,
+            title,
+            desc,
+            poster: poster || undefined
+          };
+        });
+
+      categories=['all', ...new Set(mediaData.map(d=>d.category))];
+      if(currentCat!=='all' && !categories.includes(currentCat)) currentCat='all';
+      if(currentCat==='all') currentSubcat='all';
+      currentPage=1;
+      render();
+    }
+
+    function parseCSV(text){
+      const rows=[];let row=[],field='',i=0,inQuotes=false;
+      while(i<text.length){
+        const c=text[i];
+        if(inQuotes){
+          if(c==='"'){
+            if(text[i+1]==='"'){field+='"';i++;}else{inQuotes=false;}
+          }else{field+=c;}
+        }else{
+          if(c==='"'){inQuotes=true;}
+          else if(c===','){row.push(field);field='';}
+          else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+          else if(c==='\r'){}
+          else{field+=c;}
+        }
+        i++;
+      }
+      if(field.length>0||row.length>0){row.push(field);rows.push(row);}
+      return rows;
+    }
+  </script>
 </body>
 </html>
