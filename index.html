@@ -232,64 +232,82 @@ function renderYearSelect(){
   });
 }
 /* ===== カテゴリ select ===== */
-function renderCatSelect(){
+function renderCatSelect(activeCat){
   catSelect.innerHTML = '';
 
-  let base = mediaData;
+  let source = mediaData;
+
+  // 年度が選択されている場合、その年度のデータだけに絞る
   if(currentYear !== 'all'){
-    base = base.filter(d => d.year === currentYear);
+    source = source.filter(d => d.year === currentYear);
   }
 
-  const cats = ['all', ...new Set(base.map(d => d.category))];
+  const displayByKey = new Map();
 
-  cats.forEach(c=>{
-    const o = document.createElement('option');
-    o.value = c;
-    o.textContent = labelCat(c);
-    o.selected = c === currentCat;
-    catSelect.appendChild(o);
-  });
+  for(const d of source){
+    if(d.category){
+      displayByKey.set(d.category, d.categoryText || d.category);
+    }
+  }
+
+  const optAll = document.createElement('option');
+  optAll.value = 'all';
+  optAll.textContent = 'すべて';
+  catSelect.appendChild(optAll);
+
+  for(const [key, label] of displayByKey.entries()){
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = label;
+    catSelect.appendChild(opt);
+  }
+
+  catSelect.value = displayByKey.has(activeCat) ? activeCat : 'all';
 }
-
 /* ===== サブカテゴリ select ===== */
-function renderSubcatSelect(){
+function renderSubcatSelect(activeCat, activeSubcat){
+  subcatWrap.style.display = activeCat !== 'all' ? '' : 'none';
   subcatSelect.innerHTML = '';
 
-  if(currentCat === 'all'){
+  if(activeCat === 'all') return;
+
+  let source = mediaData;
+
+  if(currentYear !== 'all'){
+    source = source.filter(d => d.year === currentYear);
+  }
+
+  source = source.filter(d => d.category === activeCat);
+
+  const displayByKey = new Map();
+
+  for(const d of source){
+    const texts = d.subcategoriesText || [];
+    for(const t of texts){
+      const key = t.toLowerCase();
+      if(!displayByKey.has(key)) displayByKey.set(key, t);
+    }
+  }
+
+  if(displayByKey.size === 0){
     subcatWrap.style.display = 'none';
     return;
   }
 
-  const map = new Map();
-  mediaData
-    .filter(d => d.category === currentCat)
-    .forEach(d=>{
-      (d.subcategoriesText || []).forEach(s=>{
-        if(!map.has(s.toLowerCase())) map.set(s.toLowerCase(), s);
-      });
-    });
+  const optAll = document.createElement('option');
+  optAll.value = 'all';
+  optAll.textContent = 'すべて';
+  subcatSelect.appendChild(optAll);
 
-  if(map.size === 0){
-    subcatWrap.style.display = 'none';
-    return;
+  for(const [key, label] of displayByKey.entries()){
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = label;
+    subcatSelect.appendChild(opt);
   }
 
-  subcatWrap.style.display = '';
-
-  const all = document.createElement('option');
-  all.value = 'all';
-  all.textContent = 'すべて';
-  subcatSelect.appendChild(all);
-
-  for(const [k,v] of map){
-    const o = document.createElement('option');
-    o.value = k;
-    o.textContent = v;
-    o.selected = k === currentSubcat;
-    subcatSelect.appendChild(o);
-  }
+  subcatSelect.value = displayByKey.has(activeSubcat) ? activeSubcat : 'all';
 }
-
 
 /* ===== 描画 ===== */
 function render(){
