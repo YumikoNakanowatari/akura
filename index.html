@@ -265,30 +265,53 @@
     }
     function renderCatSelect(activeCat){
       catSelect.innerHTML = '';
-      const unique = ['all', ...new Set(mediaData.map(d => (d.category||'').toLowerCase()))];
-      for(const cat of unique){
+
+      let source = mediaData;
+
+      // 年度が選択されている場合、その年度のデータだけに絞る
+      if(currentYear !== 'all'){
+        source = source.filter(d => d.year === currentYear);
+      }
+
+      const displayByKey = new Map();
+
+      for(const d of source){
+        if(d.category){
+          displayByKey.set(d.category, d.categoryText || d.category);
+        }
+      }
+
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = 'すべて';
+      catSelect.appendChild(optAll);
+
+      for(const [key, label] of displayByKey.entries()){
         const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = labelCat(cat);
+        opt.value = key;
+        opt.textContent = label;
         catSelect.appendChild(opt);
       }
-      catSelect.value = activeCat;
+
+      catSelect.value = displayByKey.has(activeCat) ? activeCat : 'all';
     }
 
     function renderSubcatSelect(activeCat, activeSubcat){
-      // cat=all の時は非表示（必要なら true に）
-      const SHOW_SUBS_ON_ALL = false;
-      const show = SHOW_SUBS_ON_ALL ? true : (activeCat !== 'all');
-
-      subcatWrap.style.display = show ? '' : 'none';
+      subcatWrap.style.display = activeCat !== 'all' ? '' : 'none';
       subcatSelect.innerHTML = '';
-      if(!show) return;
 
-      const source = SHOW_SUBS_ON_ALL
-        ? mediaData
-        : mediaData.filter(d => (d.category||'').toLowerCase() === activeCat);
+      if(activeCat === 'all') return;
 
-      const displayByKey = new Map(); // key: lower, val: 最初に見つかった表示名
+      let source = mediaData;
+
+      if(currentYear !== 'all'){
+        source = source.filter(d => d.year === currentYear);
+      }
+
+      source = source.filter(d => d.category === activeCat);
+
+      const displayByKey = new Map();
+
       for(const d of source){
         const texts = d.subcategoriesText || [];
         for(const t of texts){
@@ -302,21 +325,19 @@
         return;
       }
 
-      // all + 各サブカテゴリ
-      {
-        const optAll = document.createElement('option');
-        optAll.value = 'all';
-        optAll.textContent = 'すべて';
-        subcatSelect.appendChild(optAll);
-      }
-      for(const [key,label] of displayByKey.entries()){
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = 'すべて';
+      subcatSelect.appendChild(optAll);
+
+      for(const [key, label] of displayByKey.entries()){
         const opt = document.createElement('option');
         opt.value = key;
         opt.textContent = label;
         subcatSelect.appendChild(opt);
       }
 
-      subcatSelect.value = activeSubcat;
+      subcatSelect.value = displayByKey.has(activeSubcat) ? activeSubcat : 'all';
     }
 
     function renderGrid(data){
