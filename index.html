@@ -459,6 +459,110 @@
       render();
     }
 
+<header>
+  <h1>安倉バレーボールクラブでの挑戦と成長の日々</h1>
+  <p class="lead">安倉VCでの仲間と共に歩んだ日々の記録です</p>
+</header>
+
+<!-- ▼ カテゴリ UI（ドロップダウン） -->
+<div class="toolbar">
+  <label>
+    年度
+    <select id="js-year-select"></select>
+  </label>
+  <label>
+    カテゴリ
+    <select id="js-cat-select"></select>
+  </label>
+
+  <label id="js-subcat-wrap" style="display:none;">
+    サブカテゴリ
+    <select id="js-subcat-select"></select>
+  </label>
+
+  <div class="count" id="js-count">読み込み中…</div>
+</div>
+
+<main class="grid" id="js-grid"></main>
+<nav class="pager" id="js-pager"></nav>
+
+<div class="lightbox" id="lightbox">
+  <button id="lbClose">✕</button>
+  <div id="lbContent"></div>
+</div>
+
+<script>
+/* ===== 既存 JS（必要最小限で整理） ===== */
+
+const BASE_URL = 'https://pub-cd6be0076e2e47c7b2f39e945c90c0b8.r2.dev/';
+let mediaData = [];
+
+const grid = document.getElementById('js-grid');
+const pager = document.getElementById('js-pager');
+const count = document.getElementById('js-count');
+
+const yearSelect = document.getElementById('js-year-select');
+const catSelect = document.getElementById('js-cat-select');
+const subcatSelect = document.getElementById('js-subcat-select');
+const subcatWrap = document.getElementById('js-subcat-wrap');
+
+let currentPage = 1;
+let pageSize = 24;
+let currentYear = '2025年度';
+let currentCat = 'all';
+let currentSubcat = 'all';
+
+function labelCat(c){ return c === 'all' ? 'すべて' : c; }
+/* ===== 年度 select ===== */
+function renderYearSelect(){
+  yearSelect.innerHTML = '';
+
+  const years = ['all', ...new Set(mediaData.map(d => d.year))];
+
+  years.forEach(y=>{
+    const o = document.createElement('option');
+    o.value = y;
+    o.textContent = y === 'all' ? 'すべて' : y;
+    o.selected = y === currentYear;
+    yearSelect.appendChild(o);
+  });
+}
+/* ===== カテゴリ select ===== */
+function renderCatSelect(){
+  catSelect.innerHTML = '';
+
+  let base = mediaData;
+  if(currentYear !== 'all'){
+    base = base.filter(d => d.year === currentYear);
+  }
+
+  const cats = ['all', ...new Set(base.map(d => d.category))];
+
+  cats.forEach(c=>{
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = labelCat(c);
+    o.selected = c === currentCat;
+    catSelect.appendChild(o);
+  });
+}
+
+/* ===== サブカテゴリ select ===== */
+function renderSubcatSelect(){
+  subcatSelect.innerHTML = '';
+
+  if(currentCat === 'all'){
+    subcatWrap.style.display = 'none';
+    return;
+  }
+
+  const map = new Map();
+  mediaData
+    .filter(d => d.category === currentCat)
+    .forEach(d=>{
+      (d.subcategoriesText || []).forEach(s=>{
+        if(!map.has(s.toLowerCase())) map.set(s.toLowerCase(), s);
+      });
     // ▼ dropdownイベント
     yearSelect.addEventListener('change', ()=>{
       const y = yearSelect.value || 'all';
